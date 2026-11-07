@@ -55,6 +55,7 @@
       <button data-tab="player" class="tab-btn" role="tab"><i data-lucide="radio" class="w-4 h-4"></i> Player</button>
       <button data-tab="programacao" class="tab-btn" role="tab"><i data-lucide="sparkles" class="w-4 h-4"></i> Programação IA</button>
       <button data-tab="config" class="tab-btn" role="tab"><i data-lucide="settings-2" class="w-4 h-4"></i> Configurações</button>
+      <button data-tab="ajuda" class="tab-btn" role="tab"><i data-lucide="circle-help" class="w-4 h-4"></i> Ajuda</button>
     </nav>
   </header>
 
@@ -64,6 +65,15 @@
          ABA 1 — PLAYER / FILA DE EXECUÇÃO
          ============================================================ -->
     <section data-page="player">
+      <!-- Aviso de primeira visita (some após clicar em "Entendi" ou configurar tudo) -->
+      <div id="onboarding" class="onboarding mb-4">
+        <i data-lucide="graduation-cap"></i>
+        <div class="flex-1">
+          <p class="font-semibold text-zinc-100">Bem-vindo à sua rádio!</p>
+          <p class="text-zinc-400 mt-0.5">Para começar: ① envie uma imagem em Configurações (gera o seu tema), ② cole a chave da IA, ③ informe a pasta do Drive — o <a data-ir-ajuda>passo a passo completo está na aba Ajuda</a>.</p>
+        </div>
+        <button id="btn-onboarding-fechar" class="text-zinc-500 hover:text-zinc-300 text-lg leading-none" aria-label="Fechar">×</button>
+      </div>
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Fila de Execução</h2>
         <div class="flex gap-2">
@@ -125,6 +135,101 @@
       </form>
 
       <div id="ia-resultado" class="mt-4"></div>
+    </section>
+
+    <!-- ============================================================
+         ABA 4 — AJUDA (passo a passo)
+         ============================================================ -->
+    <section data-page="ajuda" class="hidden">
+      <h2 class="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-1">Como usar a Rádio Personal</h2>
+      <p class="text-sm text-zinc-400 mb-4">Complete os 4 passos abaixo na ordem. Tudo fica salvo neste navegador.</p>
+
+      <div class="space-y-3">
+
+        <!-- PASSO 1 -->
+        <details class="ajuda-card" open>
+          <summary class="ajuda-titulo"><span class="passo-n cor-acento-fun">1</span> Personalize: imagem + tema de cores <span class="ml-auto text-xs text-zinc-500">aba Configurações</span><span data-status-passo="1" class="ml-auto text-xs text-zinc-500">pendente</span></summary>
+          <div class="ajuda-corpo">
+            <ol class="lista-passos">
+              <li>Abra a aba <strong>Configurações</strong>.</li>
+              <li>No bloco <strong>Identidade da Rádio</strong>, clique em <strong>"Enviar imagem (gera o tema)"</strong> e escolha uma imagem do seu dispositivo (logo, capa, foto — de preferência vibrante).</li>
+              <li>O app extrai automaticamente a <strong>cor de destaque</strong> da imagem e aplica em toda a interface (botões, AO VIVO, barra de progresso). O ícone também se torna o logotipo da rádio.</li>
+              <li>Defina <strong>Nome da rádio</strong> e <strong>Slogan</strong>. As mudanças aparecem no cabeçalho na hora.</li>
+            </ol>
+            <p class="ajuda-side"><i data-lucide="lightbulb"></i> Imagens com cores fortes (arte, capa de disco, foto de show) geram os melhores temas. O tema fica salvo e reaparece sempre que você abrir o app.</p>
+          </div>
+        </details>
+
+        <!-- PASSO 2 -->
+        <details class="ajuda-card">
+          <summary class="ajuda-titulo"><span class="passo-n cor-acento-fun">2</span> Configure a chave da IA <span class="ml-auto text-xs text-zinc-500">aba Configurações</span><span data-status-passo="2" class="ml-auto text-xs text-zinc-500">pendente</span></summary>
+          <div class="ajuda-corpo">
+            <ol class="lista-passos">
+              <li>No bloco <strong>Inteligência Artificial</strong>, escolha o provedor: <strong>Gemini</strong> (gratuito, recomendado) ou <strong>OpenAI</strong> (pago).</li>
+              <li>Gere a chave:
+                <ul class="lista-sub">
+                  <li><strong>Gemini:</strong> acesse <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com/app/apikey</a> → "Criar chave da API" → copie (começa com <code>AIza...</code>).</li>
+                  <li><strong>OpenAI:</strong> acesse <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a> → "Create new secret key" → copie (começa com <code>sk-...</code>).</li>
+                </ul>
+              </li>
+              <li>Cole a chave no campo <strong>Chave da API</strong> e clique em <strong>Salvar configurações</strong>.</li>
+              <li>Clique em <strong>Testar IA</strong> — deve aparecer <em>"Conexão OK ✔"</em>.</li>
+            </ol>
+            <p class="ajuda-side"><i data-lucide="shield-check"></i> A chave fica apenas neste navegador (localStorage). Ninguém mais tem acesso a ela, e ela só é usada para gerar programações.</p>
+          </div>
+        </details>
+
+        <!-- PASSO 3 -->
+        <details class="ajuda-card">
+          <summary class="ajuda-titulo"><span class="passo-n cor-acento-fun">3</span> Carregue suas músicas do Google Drive <span class="ml-auto text-xs text-zinc-500">aba Configurações → Player</span><span data-status-passo="3" class="ml-auto text-xs text-zinc-500">pendente</span></summary>
+          <div class="ajuda-corpo">
+            <ol class="lista-passos">
+              <li>No <strong>Google Drive</strong>, crie uma pasta com seus áudios (<code>.mp3</code>, <code>.m4a</code>, <code>.aac</code>).</li>
+              <li>Compartilhe a pasta: clique nela → <strong>Compartilhar</strong> → <strong>"Qualquer pessoa com o link"</strong> (permissão de Leitor). Sem isso o app não consegue ler os arquivos.</li>
+              <li>Copie o link da pasta (no navegador: <code>https://drive.google.com/drive/folders/1AbC...</code>) e cole no campo <strong>"Link da pasta pública ou ID"</strong>.</li>
+              <li>Salve, vá para a aba <strong>Player</strong> e clique em <strong>"Carregar do Drive"</strong> — a fila aparece com todas as faixas.</li>
+            </ol>
+            <p class="ajuda-side"><i data-lucide="key-round"></i> A leitura do Drive usa a sua mesma chave Google: se ocorrer <strong>erro 403</strong>, a pasta não está pública ou a <em>Drive API</em> ainda não foi habilitada no projeto onde a chave foi criada.</p>
+          </div>
+        </details>
+
+        <!-- PASSO 4 -->
+        <details class="ajuda-card">
+          <summary class="ajuda-titulo"><span class="passo-n cor-acento-fun">4</span> Gere programações com IA e toque ao vivo <span data-status-passo="4" class="ml-auto text-xs text-zinc-500">guia</span></summary>
+          <div class="ajuda-corpo">
+            <ol class="lista-passos">
+              <li>Na aba <strong>Programação IA</strong>, descreva o que quer (ex.: <em>"Programação de 4 horas focada em Flashback Anos 80, estilo descontraído"</em>), escolha duração e persona do locutor.</li>
+              <li>Clique em <strong>"Gerar programação com IA"</strong>. O resultado traz: nome do bloco, grade horária, texto de locução de abertura e a ordem das músicas do SEU acervo.</li>
+              <li>Clique em <strong>"Aplicar Programação ao Player"</strong> — a fila é reordenada e começa a tocar.</li>
+              <li>No player fixo (barra inferior): <strong>Play/Pause</strong>, <strong>próxima/anterior</strong>, barra de progresso clicável, <strong>volume</strong> (desktop) e <strong>shuffle</strong> no topo da fila.</li>
+              <li>Quando uma faixa termina, a próxima toca automaticamente — no fim da fila, a rádio recomeça do início (rodízio contínuo).</li>
+            </ol>
+            <p class="ajuda-side"><i data-lucide="file-audio"></i> Sem Drive por enquanto? Use <strong>"Adicionar arquivos locais"</strong> na aba Player para tocar MP3s do próprio dispositivo e testar tudo.</p>
+          </div>
+        </details>
+
+        <!-- Extras -->
+        <details class="ajuda-card">
+          <summary class="ajuda-titulo"><span class="passo-n passn-4">★</span> Instale como app (PWA) & resolução de problemas</summary>
+          <div class="ajuda-corpo">
+            <p class="mb-1 font-semibold text-zinc-300">Instalar no celular ou PC:</p>
+            <ol class="lista-passos">
+              <li><strong>Android (Chrome):</strong> menu ⋮ → <strong>"Adicionar à tela inicial"</strong> → Instalar.</li>
+              <li><strong>iOS (Safari):</strong> botão Compartilhar (□↑) → <strong>"Adicionar à Tela de Início"</strong>.</li>
+              <li><strong>PC (Chrome/Edge):</strong> ícone ⊕ na barra de endereço → <strong>"Instalar"</strong>.</li>
+            </ol>
+            <p class="mt-3 mb-1 font-semibold text-zinc-300">Problemas comuns:</p>
+            <ul class="lista-sub">
+              <li><strong>"Nenhuma chave de API de IA configurada"</strong> → refaça o Passo 2.</li>
+              <li><strong>Erro 403 ao carregar o Drive</strong> → pasta não está pública ou Drive API desativada (Passo 3).</li>
+              <li><strong>Música não toca</strong> → arquivo não tem permissão pública, formato não suportado, ou falta de internet (streams do Drive exigem rede).</li>
+              <li><strong>Limite 429 na IA</strong> → cota gratuita atingida; aguarde alguns minutos.</li>
+              <li><strong>Quero zerar tudo</strong> → no console do navegador: <code>localStorage.clear()</code> e recarregue.</li>
+            </ul>
+          </div>
+        </details>
+
+      </div>
     </section>
 
     <!-- ============================================================

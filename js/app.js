@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   aplicarTemaSalvo();
   atualizarAvisos();
   atualizarSeloDrive();
+  renderizarStatusPassos();
 });
 
 // ============================================================
@@ -61,6 +62,32 @@ function vincularEventos() {
     e.target.value = '';
   });
   $('#input-logo')?.addEventListener('change', aoEnviarImagemTema);
+  $('#btn-onboarding-fechar')?.addEventListener('click', () => {
+    $('#onboarding').remove();
+    localStorage.setItem('radioPersonal:onboarding', 'visto');
+  });
+  $$('[data-ir-ajuda]').forEach((el) => el.addEventListener('click', () =>
+    document.querySelector('[data-tab="ajuda"]')?.click()));
+  // Some o onboarding se o usuário já viu ou já configurou a IA
+  if (localStorage.getItem('radioPersonal:onboarding') || getConfig().apiKey) {
+    $('#onboarding')?.remove();
+  }
+  renderizarStatusPassos();
+}
+
+/** Marca na aba Ajuda quais passos já estão concluídos. */
+function renderizarStatusPassos() {
+  const cfg = getConfig();
+  const feito = (n) => n === 1 ? Boolean(cfg.rádio?.tema || cfg.rádio?.logo)
+    : n === 2 ? Boolean(cfg.apiKey)
+    : n === 3 ? Boolean(extrairDriveId(cfg.driveFonte))
+    : true;
+  document.querySelectorAll('[data-status-passo]').forEach((el) => {
+    el.textContent = feito(Number(el.dataset.statusPasso)) ? '✔ concluído' : 'pendente';
+    el.className = feito(Number(el.dataset.statusPasso))
+      ? 'ml-auto text-xs font-semibold cor-acento-texto'
+      : 'ml-auto text-xs text-zinc-500';
+  });
 }
 
 // ============================================================
@@ -97,6 +124,7 @@ async function aoEnviarImagemTema(e) {
 
     $('#cfg-logo').value = ''; // anula URL manual (imagem local prevalece)
     aplicarIdentidade();
+    renderizarStatusPassos();
     mostrarFeedback('✔ Imagem aplicada: logo atualizado e tema de cores gerado com sucesso!', 'cor-acento-texto');
   } catch (err) {
     mostrarFeedback('✖ ' + err.message, 'text-red-400');
@@ -168,6 +196,7 @@ function aoSalvarConfig(e) {
 
   atualizarAvisos();
   atualizarSeloDrive();
+  renderizarStatusPassos();
   mostrarFeedback('✔ Configurações salvas neste navegador.', 'cor-acento-texto');
 }
 
@@ -231,6 +260,7 @@ async function aoCarregarDrive() {
   try {
     const faixas = await listarFaixasDrive();
     player.setFila(faixas);
+    renderizarStatusPassos();
     feedbackAviso(`${faixas.length} faixas carregadas do Google Drive.`);
   } catch (err) {
     feedbackAviso('✖ ' + err.message);

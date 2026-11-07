@@ -132,3 +132,85 @@
 .cor-acento-suave-fun { background-color: var(--rp-acento-suave) !important; }
 .cor-acento-borda-bor { border: 1px solid var(--rp-acento-borda) !important; }
 .cor-acento-borda-txt { border-left: 2px solid var(--rp-acento-borda) !important; }
+
+/* ============================================================
+   ABA AJUDA — passo a passo
+   ============================================================ */
+.ajuda-card {
+  background: #18181b;              /* zinc-900 */
+  border: 1px solid #27272a;
+  border-radius: 0.75rem;
+  padding: 0.25rem 1rem;
+}
+.ajuda-card[open] { border-color: #3f3f46; }
+.ajuda-titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: #f4f4f5;
+  padding: 0.75rem 0;
+  list-style: none;
+}
+.ajuda-titulo::-webkit-details-marker { display: none; }
+.ajuda-corpo {
+  border-top: 1px solid #27272a;
+  padding: 0.75rem 0 1rem;
+  font-size: 0.875rem;
+  color: #d4d4d8;
+  display: grid;
+  gap: 0.75rem;
+}
+@media (min-width: 640px) {
+  .ajuda-corpo { grid-template-columns: 1fr 240px; align-items: start; }
+}
+.ajuda-side {
+  background: var(--rp-acento-suave);
+  border: 1px solid var(--rp-acento-borda);
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.8125rem;
+  color: #a1a1aa;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+.ajuda-side svg { width: 1rem; height: 1rem; flex-shrink: 0; margin-top: 2px; color: var(--rp-acento); }
+.ajuda-side a { color: var(--rp-acento); text-decoration: underline; }
+
+.passo-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #09090b;
+  flex-shrink: 0;
+}
+.passo-n.passn-4 { background: #3f3f46; color: #f4f4f5; }
+
+.lista-passos { list-style: decimal; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.375rem; }
+.lista-passos li::marker { color: var(--rp-acento); font-weight: 700; }
+.lista-sub { list-style: disc; padding-left: 1.25rem; margin-top: 0.375rem; display: flex; flex-direction: column; gap: 0.25rem; color: #a1a1aa; }
+.lista-sub a { color: var(--rp-acento); text-decoration: underline; }
+.lista-sub code, .ajuda-corpo code { background: #27272a; border-radius: 0.25rem; padding: 0 0.25rem; font-size: 0.8125rem; }
+
+/* Aviso de primeira visita (onboarding) */
+.onboarding {
+  background: var(--rp-acento-suave);
+  border: 1px solid var(--rp-acento-borda);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  font-size: 0.875rem;
+  color: #e4e4e7;
+}
+.onboarding svg { width: 1.125rem; height: 1.125rem; color: var(--rp-acento); flex-shrink: 0; margin-top: 1px; }
+.onboarding a { color: var(--rp-acento); font-weight: 600; text-decoration: underline; cursor: pointer; }
