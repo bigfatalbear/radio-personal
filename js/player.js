@@ -1,0 +1,140 @@
+/**
+ * player.js — Motor de reprodução (HTMLAudioElement) e fila de execução.
+ * Controles: play/pause, próxima, anterior, barra de progresso, volume,
+ * shuffle. Todos os eventos expostos via callbacks para renderização na UI.
+ */
+import { urlStream } from './drive.js';
+
+const audio = new Audio();
+audio.preload = 'metadata';
+
+// ===== Estado =====
+let fila = [];        // [{origem: 'drive'|'local', id?: string, url?: string, nome: string}]
+let indiceAtual = -1;
+let shuffle = false;
+let filaBase = [];    // ordem original (para restaurar ao desligar shuffle)
+
+// ===== Callbacks registrados por app.js =====
+export const callbacks = {
+  onRender: () => {},           // setFila/index mudou
+  onStatus: () => {},           // play/pause/loading
+  onProgresso: () => {},        // timeupdate
+};
+
+// ===== Filas =====
+export function getFila() { return fila; }
+export function getIndice() { return indiceAtual; }
+export function getAtual() { return fila[indiceAtual] ?? null; }
+export function isShuffle() { return shuffle; }
+
+/**
+ * Define a playlist. `faixas` pode conter itens do Drive ({id, nome}) ou
+ * locais ({url, nome}).
+ */
+export function setFila(faixas) {
+  filaBase = faixas.map(normalizar);
+  fila = shuffle ? [...filaBase].sort(() => Math.random() - 0.5) : [...filaBase];
+  callbacks.onRender();
+}
+
+/** Adiciona faixas ao fim da fila atual (arquivos locais via <input type=file>) */
+export function adicionarLocais(arquivos) {
+  const novos = [...arquivos]
+    .filter((f) => f.type.startsWith('audio/') || /\.(mp3|m4a|aac|ogg|wav)$/i.test(f.name))
+    .map((f) => ({ origem: 'local', url: URL.createObjectURL(f), nome: f.name.replace(/\.[^.]+$/, '') }));
+  if (novos.length === 0) return 0;
+  filaBase = [...filaBase, ...novos];
+  fila = shuffle ? [...filaBase].sort(() => Math.random() - 0.5) : filaBase;
+  callbacks.onRender();
+  return novos.length;
+}
+
+/** Alterna shuffle (reembaralha a fila, preservando a atual no início) */
+export function toggleShuffle() {
+  shuffle = !shuffle;
+  if (shuffle) {
+    const atual = getAtual();
+    fila = filaBase
+      .filter((f) => f !== atual)
+      .sort(() => Math.random() - 0.5);
+    if (atual) fila.unshift(atual);
+    indiceAtual = atual ? 0 : -1;
+  } else {
+    fila = [...filaBase];
+    if (indiceAtual >= 0 && getAtual()) indiceAtual = filaBase.indexOf(getAtual());
+  }
+  callbacks.onRender();
+  return shuffle;
+}
+
+function normalizar(f) {
+  if (f.url) return { ...f, origem: f.origem ?? 'local' };
+  return { ...f, origem: f.origem ?? 'drive', url: urlStream(f.id) };
+}
+function normalizarFaixa(f) { return normalizar(f); } // alias de compatibilidade
+
+// ===== Controles =====
+export async function tocar(indice = null) {
+  if (indice !== null) indiceAtual = indice;
+  const faixa = getAtual();
+  if (!faixa) return;
+
+  audio.src = faixa.url;
+  audio.load();
+  try {
+    await audio.play();
+    callbacks.onStatus('tocando');
+  } catch (e) {
+    // Falhas do Drive (arquivo privado / CORS) geram erro no elemento <audio>
+    callbacks.onStatus('erro');
+  }
+}
+
+export function playPause() {
+  if (indiceAtual === -1 && fila.length) return tocar(0);
+  if (audio.paused) audio.play().catch(() => {});
+  else audio.pause();
+  callbacks.onStatus(audio.paused ? 'pausado' : 'tocando');
+}
+
+export function proxima() {
+  if (indiceAtual < fila.length - 1) return tocar(indiceAtual + 1);
+  // Fim da fila: reinicia do começo (streaming contínuo de rádio)
+  if (fila.length) tocar(0);
+}
+
+export function anterior() {
+  if (audio.currentTime > 4) { audio.currentTime = 0; return; }
+  if (indiceAtual > 0) tocar(indiceAtual - 1);
+}
+
+export function setVolume(v) { audio.volume = Math.min(1, Math.max(0, v / 100)); }
+
+export function seek(fraction) {
+  if (audio.duration && isFinite(audio.duration)) audio.currentTime = fraction * audio.duration;
+}
+
+// ===== Eventos do <audio> =====
+audio.addEventListener('timeupdate', () => {
+  const d = audio.duration || 0;
+  callbacks.onProgresso({
+    atual: audio.currentTime,
+    duracao: d,
+    frac: d ? audio.currentTime / d : 0,
+  });
+});
+audio.addEventListener('ended', () => proxima());
+audio.addEventListener('play', () => callbacks.onStatus('tocando'));
+audio.addEventListener('pause', () => callbacks.onStatus('pausado'));
+audio.addEventListener('error', () => {
+  // Arquivo do Drive indisponível (privado/CORS)? Pula para a próxima.
+  if (fila.length) proxima();
+});
+
+/** Formata segundos em mm:ss */
+export function mmss(seg) {
+  if (!isFinite(seg)) return '0:00';
+  const m = Math.floor(seg / 60);
+  const s = Math.floor(seg % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}

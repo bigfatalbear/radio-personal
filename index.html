@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Rádio Personal — Sua rádio no ar</title>
+  <meta name="description" content="Rádio Personal: PWA de streaming de áudio do Google Drive com programação gerada por IA.">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" href="https://cdn.jsdelivr.net/gh/lucide-icons/lucide@0.454.0/icons/radio.svg"
+        onerror="this.href='';" type="image/svg+xml">
+  <!-- Tailwind via CDN (estilização rápida, sem build) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          animation: { pulseSlow: 'pulse 2.5s ease-in-out infinite' },
+        },
+      },
+    };
+  </script>
+  <!-- Inter + Lucide Icons via CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen pb-28 antialiased">
+
+  <!-- ============================================================
+       HEADER — Identidade da Rádio (nome/slogan/logo das Configurações)
+       ============================================================ -->
+  <header class="sticky top-0 z-40 bg-zinc-900/80 backdrop-blur border-b border-zinc-800">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+      <img id="hdr-logo" src="" alt="" class="w-10 h-10 rounded-lg object-cover hidden">
+      <div class="flex-1 min-w-0">
+        <h1 id="hdr-nome" class="font-extrabold text-lg leading-tight truncate">Rádio Personal</h1>
+        <p id="hdr-slogan" class="text-xs text-zinc-400 truncate">Sua rádio, seu estilo</p>
+      </div>
+      <div id="selo-drive" class="hidden md:flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-800 rounded-full px-3 py-1">
+        <i data-lucide="hard-drive" class="w-3.5 h-3.5"></i> <span id="selo-drive-txt">Drive não configurado</span>
+      </div>
+      <div id="badge-ao-vivo" class="hidden items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-3 py-1">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> AO VIVO
+      </div>
+    </div>
+    <!-- Navegação por abas -->
+    <nav class="max-w-5xl mx-auto px-4 pb-2 flex gap-1 overflow-x-auto" role="tablist" aria-label="Navegação principal">
+      <button data-tab="player" class="tab-btn" role="tab"><i data-lucide="radio" class="w-4 h-4"></i> Player</button>
+      <button data-tab="programacao" class="tab-btn" role="tab"><i data-lucide="sparkles" class="w-4 h-4"></i> Programação IA</button>
+      <button data-tab="config" class="tab-btn" role="tab"><i data-lucide="settings-2" class="w-4 h-4"></i> Configurações</button>
+    </nav>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-6">
+
+    <!-- ============================================================
+         ABA 1 — PLAYER / FILA DE EXECUÇÃO
+         ============================================================ -->
+    <section data-page="player">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Fila de Execução</h2>
+        <div class="flex gap-2">
+          <button id="btn-carregar-drive" class="btn-secundario"><i data-lucide="folder-open" class="w-4 h-4"></i> Carregar do Drive</button>
+          <button id="btn-shuffle" class="btn-secundario" title="Aleatório"><i data-lucide="shuffle" class="w-4 h-4"></i></button>
+        </div>
+      </div>
+
+      <div id="aviso-player" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-sm text-zinc-400">
+        <p class="flex items-start gap-2">
+          <i data-lucide="info" class="w-4 h-4 mt-0.5 shrink-0 text-zinc-500"></i>
+          <span>Carregue as músicas da pasta do Google Drive configurada em <strong>Configurações</strong>, ou adicione arquivos locais para testar o player.</span>
+        </p>
+        <label class="btn-secundario inline-flex mt-3 cursor-pointer">
+          <i data-lucide="file-audio" class="w-4 h-4"></i> Adicionar arquivos locais
+          <input type="file" id="input-arquivos-local" accept="audio/*,.mp3,.m4a,.aac,.ogg,.wav" multiple class="hidden">
+        </label>
+      </div>
+
+      <ul id="lista-fila" class="mt-4 flex flex-col gap-1"></ul>
+    </section>
+
+    <!-- ============================================================
+         ABA 2 — PROGRAMAÇÃO COM IA
+         ============================================================ -->
+    <section data-page="programacao" class="hidden">
+      <h2 class="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">Assistente de Programação (IA)</h2>
+
+      <!-- Aviso se a chave não estiver configurada -->
+      <div id="aviso-sem-key" class="hidden mb-4 bg-amber-500/10 border border-amber-500/40 text-amber-300 rounded-xl p-4 text-sm flex items-start gap-2">
+        <i data-lucide="key-round" class="w-4 h-4 mt-0.5 shrink-0"></i>
+        <span>Nenhuma chave de API de IA configurada. Vá em <button data-ir-config class="underline font-semibold">Configurações</button> para adicioná-la.</span>
+      </div>
+
+      <form id="form-programacao" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+        <label class="block text-sm">
+          Descreva a programação desejada
+          <textarea id="ia-descricao" rows="3" required
+            placeholder='ex.: "Criar uma programação de 4 horas focada em Flashback Anos 80, com estilo descontraído"'
+            class="input mt-1"></textarea>
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="text-sm flex flex-col">Duração (horas)
+            <input id="ia-horas" type="number" min="1" max="12" value="2" class="input mt-1">
+          </label>
+          <label class="text-sm flex flex-col">Estilo/Persona do locutor
+            <select id="ia-estilo" class="input mt-1">
+              <option value="descontraido">Descontraído</option>
+              <option value="formal">Formal</option>
+              <option value="gospel">Gospel / Reflexivo</option>
+              <option value="romantico">Romântico</option>
+              <option value="agitation">Agitação (festa)</option>
+            </select>
+          </label>
+        </div>
+        <button type="submit" class="btn-primario w-full flex items-center justify-center gap-2">
+          <i data-lucide="wand-2" class="w-4 h-4"></i> Gerar programação com IA
+        </button>
+      </form>
+
+      <div id="ia-resultado" class="mt-4"></div>
+    </section>
+
+    <!-- ============================================================
+         ABA 3 — CONFIGURAÇÕES
+         ============================================================ -->
+    <section data-page="config" class="hidden">
+      <h2 class="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">Configurações do Sistema</h2>
+
+      <form id="form-config" class="space-y-4 max-w-2xl">
+        <!-- 1. Identidade da Rádio -->
+        <fieldset class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+          <legend class="fieldset-legend-cyan">Identidade da Rádio</legend>
+          <label class="text-sm flex flex-col">Nome da rádio
+            <input id="cfg-nome" class="input mt-1" placeholder="Rádio Personal">
+          </label>
+          <label class="text-sm flex flex-col">Slogan
+            <input id="cfg-slogan" class="input mt-1" placeholder="Sua rádio, seu estilo">
+          </label>
+          <label class="text-sm flex flex-col">Logotipo (URL ou dados locais via base64)
+            <input id="cfg-logo" class="input mt-1" placeholder="https://... ou data:image/png;base64,...">
+          </label>
+        </fieldset>
+
+        <!-- 2. Chave da IA -->
+        <fieldset class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+          <legend class="fieldset-legend-cyan">Inteligência Artificial</legend>
+          <label class="text-sm flex flex-col">Provedor
+            <select id="cfg-provedor" class="input mt-1">
+              <option value="gemini">Google Gemini API</option>
+              <option value="openai">OpenAI API</option>
+            </select>
+          </label>
+          <label class="text-sm flex flex-col">Chave da API (armazenada apenas neste navegador)
+            <input id="cfg-apikey" type="password" autocomplete="off" class="input mt-1 font-mono" placeholder="AIza... ou sk-...">
+          </label>
+          <p class="text-xs text-zinc-500 flex items-start gap-1.5">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
+            A chave é salva via <code class="text-zinc-400">localStorage</code> e nunca sai do seu navegador (exceto para a API do provedor escolhido).
+          </p>
+        </fieldset>
+
+        <!-- 3. Google Drive -->
+        <fieldset class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+          <legend class="fieldset-legend-cyan">Fonte de Músicas (Google Drive)</legend>
+          <label class="text-sm flex flex-col">Link da pasta pública ou ID
+            <input id="cfg-drive" class="input mt-1 font-mono text-xs" placeholder="https://drive.google.com/drive/folders/1AbC... ou apenas o ID">
+          </label>
+          <p class="text-xs text-zinc-500 flex items-start gap-1.5">
+            <i data-lucide="folder" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
+            Compartilhe a pasta como "Qualquer pessoa com o link" no Drive para permitir a leitura dos arquivos.
+          </p>
+        </fieldset>
+
+        <div class="flex gap-2">
+          <button type="submit" class="btn-primario"><i data-lucide="save" class="w-4 h-4"></i> Salvar configurações</button>
+          <button type="button" id="btn-testar-ia" class="btn-secundario"><i data-lucide="plug-zap" class="w-4 h-4"></i> Testar IA</button>
+        </div>
+        <div id="config-feedback" class="text-sm"></div>
+      </form>
+    </section>
+
+  </main>
+
+  <!-- ============================================================
+       PLAYER FIXO INFERIOR (estilo Spotify)
+       ============================================================ -->
+  <footer id="player-bar" class="fixed bottom-0 inset-x-0 z-50 bg-zinc-900 border-t border-zinc-800">
+    <div class="max-w-5xl mx-auto px-4 py-2">
+      <!-- Barra de progresso -->
+      <div class="h-1 bg-zinc-800 rounded-full overflow-hidden mb-2">
+        <div id="progresso-barra" class="h-full bg-emerald-400 w-0 transition-all duration-300"></div>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Capa + título -->
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div class="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden">
+            <i data-lucide="music-2" id="capa-icone" class="w-5 h-5 text-zinc-500"></i>
+          </div>
+          <div class="min-w-0">
+            <p id="tocando-titulo" class="text-sm font-semibold truncate">Minhas músicas</p>
+            <p id="tocando-info" class="text-xs text-zinc-400 truncate">Nada tocando</p>
+          </div>
+        </div>
+        <!-- Controles -->
+        <div class="flex items-center gap-1">
+          <button id="btn-anterior" class="controle" title="Anterior"><i data-lucide="skip-back" class="w-4 h-4"></i></button>
+          <button id="btn-play" class="w-10 h-10 rounded-full bg-emerald-400 hover:bg-emerald-300 text-zinc-950 flex items-center justify-center transition" title="Play/Pause">
+            <i data-lucide="play" id="icone-play" class="w-5 h-5 fill-current"></i>
+          </button>
+          <button id="btn-proxima" class="controle" title="Próxima"><i data-lucide="skip-forward" class="w-4 h-4"></i></button>
+          <div class="hidden sm:flex items-center gap-1.5 ml-2 w-28">
+            <i data-lucide="volume-2" class="w-4 h-4 text-zinc-400"></i>
+            <input id="ctrl-volume" type="range" min="0" max="100" value="80" class="range-volume w-full">
+          </div>
+        </div>
+        <div class="hidden md:block text-xs font-mono text-zinc-500 tabular-nums w-24 text-right">
+          <span id="tempo-atual">0:00</span> / <span id="tempo-total">0:00</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <audio id="audio" preload="metadata"></audio>
+
+  <!-- Ponto de entrada (module ES6) -->
+  <script type="module" src="js/app.js"></script>
+  <script>
+    // Registro do Service Worker em file:// não roda — só em https/Pages
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
