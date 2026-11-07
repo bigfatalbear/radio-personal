@@ -5,6 +5,7 @@
 import { getConfig, salvarConfig, extrairDriveId } from './settings.js';
 import { listarFaixasDrive, getAcervo } from './drive.js';
 import { gerarProgramacao, testarIA, iaDisponivel, setAcervoProvider } from './ai.js';
+import { extrairPaleta, aplicarTema, redimensionarImagem } from './theme.js';
 import * as player from './player.js';
 
 const $ = (s) => document.querySelector(s);
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   vincularEventos();
   vincularPlayer();
   setAcervoProvider(getAcervo);
+  aplicarTemaSalvo();
   atualizarAvisos();
   atualizarSeloDrive();
 });
@@ -58,6 +60,73 @@ function vincularEventos() {
     if (n) feedbackAviso(`${n} arquivo(s) local(is) adicionados à fila.`);
     e.target.value = '';
   });
+  $('#input-logo')?.addEventListener('change', aoEnviarImagemTema);
+}
+
+// ============================================================
+// TEMA GERADO A PARTIR DA IMAGEM (upload do usuário)
+// ============================================================
+async function aoEnviarImagemTema(e) {
+  const arquivo = e.target.files?.[0];
+  e.target.value = '';
+  if (!arquivo) return;
+
+  const aviso = $('#config-feedback');
+  aviso.className = 'text-sm text-zinc-400';
+  aviso.textContent = 'Analisando cores da imagem…';
+
+  try {
+    const url = URL.createObjectURL(arquivo);
+    // 1) Redimensiona para um base64 leve (compatível com localStorage)
+    const miniatura = await redimensionarImagem(url, 256, 0.82);
+    // 2) Extrai a paleta via canvas
+    const paleta = await extrairPaleta(miniatura);
+    // 3) Aplica na UI (variáveis CSS)
+    const temaAplicada = aplicarTema(paleta);
+    // 4) Persistindo logo + tema
+    salvarConfig({
+      rádio: { logo: miniatura, tema: temaAplicada ?? { acento: paleta.acento } },
+    });
+
+    // Preview + swatches
+    const prev = $('#logo-preview');
+    prev.style.backgroundImage = `url(${miniatura})`;
+    prev.style.backgroundSize = 'cover';
+    prev.classList.remove('hidden');
+    renderSwatches(temaAplicada);
+
+    $('#cfg-logo').value = ''; // anula URL manual (imagem local prevalece)
+    aplicarIdentidade();
+    mostrarFeedback('✔ Imagem aplicada: logo atualizado e tema de cores gerado com sucesso!', 'cor-acento-texto');
+  } catch (err) {
+    mostrarFeedback('✖ ' + err.message, 'text-red-400');
+  }
+}
+
+/** Reaplica o tema salvo no localStorage (ao carregar a página). */
+function aplicarTemaSalvo() {
+  const cfg = getConfig();
+  const tema = cfg.rádio?.tema;
+  if (tema?.acento ?? tema) {
+    aplicarTema(tema);
+  }
+  // Preview do logo salvo (local ou URL)
+  const logo = cfg.rádio?.logo;
+  if (logo) {
+    const prev = $('#logo-preview');
+    prev.style.backgroundImage = `url(${logo})`;
+    prev.style.backgroundSize = 'cover';
+    prev.classList.remove('hidden');
+    extrairPaleta(logo).catch(() => {}).then((p) => p && renderSwatches(p));
+  }
+}
+
+/** Mostra as cores extraídas como samples visuais */
+function renderSwatches(paleta) {
+  if (!paleta) return;
+  const cores = [paleta.acento, paleta.hover, paleta.escuro].filter(Boolean);
+  $('#paleta-swatches').innerHTML = cores.map((c) => `
+    <span class="inline-block w-6 h-6 rounded-md border border-zinc-700" style="background:${c}" title="${c}"></span>`).join('');
 }
 
 // ============================================================
@@ -75,6 +144,7 @@ function preencherFormConfig() {
 
 function aoSalvarConfig(e) {
   e.preventDefault();
+  const cfgAntiga = getConfig();
   salvarConfig({
     provedor: $('#cfg-provedor').value,
     apiKey: $('#cfg-apikey').value.trim(),
@@ -82,13 +152,23 @@ function aoSalvarConfig(e) {
     rádio: {
       nome: $('#cfg-nome').value.trim() || 'Rádio Personal',
       slogan: $('#cfg-slogan').value.trim(),
-      logo: $('#cfg-logo').value.trim(),
+      logo: $('#cfg-logo').value.trim() || cfgAntiga.rádio?.logo || '',
     },
   });
+  const cfg = getConfig();
   aplicarIdentidade();
+
+  // Se o logo é uma URL (sem tema salvo ou logo mudou), tenta gerar o tema dela
+  const logoMudou = cfg.rádio.logo && cfg.rádio.logo !== cfgAntiga.rádio?.logo;
+  if (logoMudou && !cfg.rádio.logo.startsWith('data:')) {
+    extrairPaleta(cfg.rádio.logo)
+      .then((p) => salvarConfig({ rádio: { tema: aplicarTema(p) ?? { acento: p.acento } } }))
+      .catch(() => {/* URL externa sem CORS: mantém tema padrão */});
+  }
+
   atualizarAvisos();
   atualizarSeloDrive();
-  mostrarFeedback('✔ Configurações salvas neste navegador.', 'text-emerald-400');
+  mostrarFeedback('✔ Configurações salvas neste navegador.', 'cor-acento-texto');
 }
 
 async function aoTestarIA() {
@@ -97,7 +177,7 @@ async function aoTestarIA() {
     alvo.className = 'text-sm text-zinc-400';
     alvo.textContent = 'Testando conexão…';
     const msg = await testarIA();
-    mostrarFeedback('✔ ' + msg, 'text-emerald-400');
+    mostrarFeedback('✔ ' + msg, 'cor-acento-texto');
   } catch (err) {
     mostrarFeedback('✖ ' + err.message, 'text-red-400');
   }
@@ -118,7 +198,7 @@ function aplicarIdentidade() {
   document.title = `${rádio.nome || 'Rádio Personal'} — Sua rádio no ar`;
 }
 
-function mostrarFeedback(msg, cor = 'text-emerald-400') {
+function mostrarFeedback(msg, cor = 'cor-acento-texto') {
   const el = $('#config-feedback');
   el.className = `text-sm ${cor}`;
   el.textContent = msg;
@@ -188,7 +268,7 @@ function renderFila() {
   lista.innerHTML = fila.map((f, i) => `
     <li class="faixa-item flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer ${i === player.getIndice() ? 'tocando' : ''}"
         data-indice="${i}">
-      <span class="w-6 text-center text-xs font-mono ${i === player.getIndice() ? 'text-emerald-400' : 'text-zinc-500'}">
+      <span class="w-6 text-center text-xs font-mono ${i === player.getIndice() ? 'cor-acento-texto' : 'text-zinc-500'}">
         ${i === player.getIndice() ? '▶' : i + 1}
       </span>
       <div class="min-w-0 flex-1">
@@ -284,9 +364,9 @@ function renderProgramacao(prog) {
     .filter(Boolean);
 
   $('#ia-resultado').innerHTML = `
-    <article class="bg-zinc-900 border border-emerald-500/30 rounded-xl p-4 space-y-3">
+    <article class="bg-zinc-900 border cor-acento-borda-bor rounded-xl p-4 space-y-3">
       <header>
-        <p class="text-xs text-emerald-400 font-semibold uppercase tracking-wider flex items-center gap-1.5">
+        <p class="text-xs cor-acento-texto font-semibold uppercase tracking-wider flex items-center gap-1.5">
           <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Programação gerada pela IA
         </p>
         <h3 class="text-lg font-bold mt-1">${prog.nomeBloco ?? 'Bloco sem nome'}</h3>
@@ -301,7 +381,7 @@ function renderProgramacao(prog) {
 
       <div>
         <h4 class="text-xs font-semibold text-zinc-400 uppercase mb-1">Locução de abertura</h4>
-        <blockquote class="text-sm text-zinc-300 border-l-2 border-emerald-400/50 pl-3 italic">${prog.locucao ?? '—'}</blockquote>
+        <blockquote class="text-sm text-zinc-300 border-l-2 cor-acento-borda-txt pl-3 italic">${prog.locucao ?? '—'}</blockquote>
       </div>
 
       <div>

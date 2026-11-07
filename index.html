@@ -46,8 +46,8 @@
       <div id="selo-drive" class="hidden md:flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-800 rounded-full px-3 py-1">
         <i data-lucide="hard-drive" class="w-3.5 h-3.5"></i> <span id="selo-drive-txt">Drive não configurado</span>
       </div>
-      <div id="badge-ao-vivo" class="hidden items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-3 py-1">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> AO VIVO
+      <div id="badge-ao-vivo" class="hidden items-center gap-1.5 text-xs font-semibold cor-acento-texto cor-acento-suave-fun cor-acento-borda-bor rounded-full px-3 py-1">
+        <span class="w-2 h-2 rounded-full cor-acento-fun animate-pulse"></span> AO VIVO
       </div>
     </div>
     <!-- Navegação por abas -->
@@ -143,9 +143,22 @@
           <label class="text-sm flex flex-col">Slogan
             <input id="cfg-slogan" class="input mt-1" placeholder="Sua rádio, seu estilo">
           </label>
-          <label class="text-sm flex flex-col">Logotipo (URL ou dados locais via base64)
-            <input id="cfg-logo" class="input mt-1" placeholder="https://... ou data:image/png;base64,...">
+          <label class="text-sm flex flex-col">Logotipo (URL)
+            <input id="cfg-logo" class="input mt-1" placeholder="https://...">
           </label>
+          <!-- Upload local: gera o TEMA da rádio a partir da imagem -->
+          <div class="flex items-center gap-3">
+            <label class="btn-secundario cursor-pointer">
+              <i data-lucide="image-plus" class="w-4 h-4"></i> Enviar imagem (gera o tema)
+              <input type="file" id="input-logo" accept="image/*" class="hidden">
+            </label>
+            <div id="logo-preview" class="w-10 h-10 rounded-lg object-cover bg-zinc-800 hidden"></div>
+            <div id="paleta-swatches" class="flex gap-1.5"></div>
+          </div>
+          <p class="text-xs text-zinc-500 flex items-start gap-1.5">
+            <i data-lucide="wand-sparkles" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
+            A imagem enviada se torna o logotipo <em>e</em> define a cor de destaque de todo o app (AO VIVO, botões, progresso).
+          </p>
         </fieldset>
 
         <!-- 2. Chave da IA -->
@@ -195,7 +208,7 @@
     <div class="max-w-5xl mx-auto px-4 py-2">
       <!-- Barra de progresso -->
       <div class="h-1 bg-zinc-800 rounded-full overflow-hidden mb-2">
-        <div id="progresso-barra" class="h-full bg-emerald-400 w-0 transition-all duration-300"></div>
+        <div id="progresso-barra" class="h-full cor-acento-fun w-0 transition-all duration-300"></div>
       </div>
       <div class="flex items-center gap-3">
         <!-- Capa + título -->
@@ -211,7 +224,7 @@
         <!-- Controles -->
         <div class="flex items-center gap-1">
           <button id="btn-anterior" class="controle" title="Anterior"><i data-lucide="skip-back" class="w-4 h-4"></i></button>
-          <button id="btn-play" class="w-10 h-10 rounded-full bg-emerald-400 hover:bg-emerald-300 text-zinc-950 flex items-center justify-center transition" title="Play/Pause">
+          <button id="btn-play" class="w-10 h-10 rounded-full cor-acento-fun cor-acento-fun-hover text-zinc-950 flex items-center justify-center transition" title="Play/Pause">
             <i data-lucide="play" id="icone-play" class="w-5 h-5 fill-current"></i>
           </button>
           <button id="btn-proxima" class="controle" title="Próxima"><i data-lucide="skip-forward" class="w-4 h-4"></i></button>

@@ -1,5 +1,17 @@
 /* styles.css — extensões minimalistas sobre o Tailwind (tema dark) */
 
+/* ============================================================
+   TEMAS DINÂMICOS (injetados por js/theme.js a partir da imagem)
+   Padrão: verde esmeralda
+   ============================================================ */
+:root {
+  --rp-acento: #34d399;
+  --rp-acento-hover: #6ee7b7;
+  --rp-acento-suave: #34d39926;
+  --rp-acento-borda: #34d39955;
+  --rp-acento-escuro: #022c22;
+}
+
 .tab-btn {
   display: inline-flex;
   align-items: center;
@@ -16,9 +28,9 @@
 }
 .tab-btn:hover { color: #e4e4e7; }
 .tab-btn.ativo {
-  color: #34d399;            /* emerald-400 */
-  background: #052e2b33;
-  border-color: #34d39944;
+  color: var(--rp-acento);
+  background: var(--rp-acento-suave);
+  border-color: var(--rp-acento-borda);
 }
 
 .btn-primario {
@@ -26,7 +38,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: #34d399;       /* emerald-400 */
+  background: var(--rp-acento);
   color: #09090b;
   font-weight: 700;
   font-size: 0.875rem;
@@ -34,7 +46,7 @@
   padding: 0.625rem 1rem;
   transition: background .15s;
 }
-.btn-primario:hover { background: #6ee7b7; }
+.btn-primario:hover { background: var(--rp-acento-hover); }
 .btn-primario:disabled { opacity: .5; cursor: not-allowed; }
 
 .btn-secundario {
@@ -63,8 +75,8 @@
 }
 .input:focus {
   outline: none;
-  border-color: #34d399;
-  box-shadow: 0 0 0 2px #34d39933;
+  border-color: var(--rp-acento);
+  box-shadow: 0 0 0 2px var(--rp-acento-suave);
 }
 .input::placeholder { color: #52525b; }
 
@@ -73,7 +85,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .08em;
-  color: #67e8f9;            /* cyan-300 */
+  color: var(--rp-acento);
   padding: 0 0.5rem;
 }
 
@@ -91,8 +103,8 @@
 .faixa-item { transition: background .15s; }
 .faixa-item:hover { background: #18181b; }
 .faixa-item.tocando {
-  background: #022c22;
-  box-shadow: inset 3px 0 0 #34d399;
+  background: var(--rp-acento-escuro);
+  box-shadow: inset 3px 0 0 var(--rp-acento);
 }
 
 .range-volume {
@@ -110,3 +122,13 @@
   background: #d4d4d8;
   cursor: pointer;
 }
+
+/* ============================================================
+   Utilitários de cor dinâmica (tema gerado da imagem)
+   ============================================================ */
+.cor-acento-texto { color: var(--rp-acento) !important; }
+.cor-acento-fun { background-color: var(--rp-acento) !important; }
+.cor-acento-fun-hover:hover { background-color: var(--rp-acento-hover) !important; }
+.cor-acento-suave-fun { background-color: var(--rp-acento-suave) !important; }
+.cor-acento-borda-bor { border: 1px solid var(--rp-acento-borda) !important; }
+.cor-acento-borda-txt { border-left: 2px solid var(--rp-acento-borda) !important; }
