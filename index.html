@@ -33,29 +33,36 @@
 </head>
 <body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen pb-28 antialiased">
 
+  <!-- Fundo glassmorphism: gradiente multicolorido desfocado -->
+  <div id="fundo-glass" aria-hidden="true">
+    <div class="blob blob-ciano"></div>
+    <div class="blob blob-roxo"></div>
+    <div class="blob blob-verde"></div>
+  </div>
+
   <!-- ============================================================
-       HEADER — Identidade da Rádio (nome/slogan/logo das Configurações)
+       HEADER — Identidade da Rádio (vidro translúcido)
        ============================================================ -->
-  <header class="sticky top-0 z-40 bg-zinc-900/80 backdrop-blur border-b border-zinc-800">
+  <header class="sticky top-0 z-40 glass rounded-b-2xl border-b border-white/10">
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
-      <img id="hdr-logo" src="" alt="" class="w-10 h-10 rounded-lg object-cover hidden">
+      <img id="hdr-logo" src="" alt="" class="w-10 h-10 rounded-xl object-cover hidden shadow-lg shadow-cyan-500/20">
       <div class="flex-1 min-w-0">
-        <h1 id="hdr-nome" class="font-extrabold text-lg leading-tight truncate">Rádio Personal</h1>
+        <h1 id="hdr-nome" class="font-extrabold text-lg leading-tight truncate text-white drop-shadow">Rádio Personal</h1>
         <p id="hdr-slogan" class="text-xs text-zinc-400 truncate">Sua rádio, seu estilo</p>
       </div>
-      <div id="selo-drive" class="hidden md:flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-800 rounded-full px-3 py-1">
+      <div id="selo-drive" class="hidden md:flex items-center gap-1.5 text-xs text-zinc-300 bg-white/5 border border-white/10 rounded-full px-3 py-1 backdrop-blur">
         <i data-lucide="hard-drive" class="w-3.5 h-3.5"></i> <span id="selo-drive-txt">Drive não configurado</span>
       </div>
-      <div id="badge-ao-vivo" class="hidden items-center gap-1.5 text-xs font-semibold cor-acento-texto cor-acento-suave-fun cor-acento-borda-bor rounded-full px-3 py-1">
+      <div id="badge-ao-vivo" class="hidden items-center gap-1.5 text-xs font-bold text-white bg-emerald-500/15 border border-emerald-400/40 rounded-full px-3 py-1 backdrop-blur" style="box-shadow:0 0 16px -2px var(--rp-acento-suave)">
         <span class="w-2 h-2 rounded-full cor-acento-fun animate-pulse"></span> AO VIVO
       </div>
     </div>
-    <!-- Navegação por abas -->
-    <nav class="max-w-5xl mx-auto px-4 pb-2 flex gap-1 overflow-x-auto" role="tablist" aria-label="Navegação principal">
-      <button data-tab="player" class="tab-btn" role="tab"><i data-lucide="radio" class="w-4 h-4"></i> Player</button>
-      <button data-tab="programacao" class="tab-btn" role="tab"><i data-lucide="sparkles" class="w-4 h-4"></i> Programação IA</button>
-      <button data-tab="config" class="tab-btn" role="tab"><i data-lucide="settings-2" class="w-4 h-4"></i> Configurações</button>
-      <button data-tab="ajuda" class="tab-btn" role="tab"><i data-lucide="circle-help" class="w-4 h-4"></i> Ajuda</button>
+    <!-- Navegação por abas (pílulas de vidro coloridas) -->
+    <nav class="max-w-5xl mx-auto px-4 pb-3 flex gap-2 overflow-x-auto" role="tablist" aria-label="Navegação principal">
+      <button data-tab="player" class="tab-btn t-ciano" role="tab"><i data-lucide="radio" class="w-4 h-4"></i> Player</button>
+      <button data-tab="programacao" class="tab-btn t-roxo" role="tab"><i data-lucide="sparkles" class="w-4 h-4"></i> Programação IA</button>
+      <button data-tab="config" class="tab-btn t-neutro" role="tab"><i data-lucide="settings-2" class="w-4 h-4"></i> Configurações</button>
+      <button data-tab="ajuda" class="tab-btn t-neutro" role="tab"><i data-lucide="circle-help" class="w-4 h-4"></i> Ajuda</button>
     </nav>
   </header>
 
@@ -77,12 +84,12 @@
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Fila de Execução</h2>
         <div class="flex gap-2">
-          <button id="btn-carregar-drive" class="btn-secundario"><i data-lucide="folder-open" class="w-4 h-4"></i> Carregar do Drive</button>
+          <button id="btn-carregar-drive" class="btn-secundario btn-ciano"><i data-lucide="folder-open" class="w-4 h-4"></i> Carregar do Drive</button>
           <button id="btn-shuffle" class="btn-secundario" title="Aleatório"><i data-lucide="shuffle" class="w-4 h-4"></i></button>
         </div>
       </div>
 
-      <div id="aviso-player" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-sm text-zinc-400">
+      <div id="aviso-player" class="glass rounded-2xl p-4 text-sm text-zinc-400">
         <p class="flex items-start gap-2">
           <i data-lucide="info" class="w-4 h-4 mt-0.5 shrink-0 text-zinc-500"></i>
           <span>Carregue as músicas da pasta do Google Drive configurada em <strong>Configurações</strong>, ou adicione arquivos locais para testar o player.</span>
@@ -108,7 +115,7 @@
         <span>Nenhuma chave de API de IA configurada. Vá em <button data-ir-config class="underline font-semibold">Configurações</button> para adicioná-la.</span>
       </div>
 
-      <form id="form-programacao" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+      <form id="form-programacao" class="glass rounded-2xl p-4 space-y-3">
         <label class="block text-sm">
           Descreva a programação desejada
           <textarea id="ia-descricao" rows="3" required
@@ -240,7 +247,7 @@
 
       <form id="form-config" class="space-y-4 max-w-2xl">
         <!-- 1. Identidade da Rádio -->
-        <fieldset class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+        <fieldset class="glass rounded-2xl p-4 space-y-3">
           <legend class="fieldset-legend-cyan">Identidade da Rádio</legend>
           <label class="text-sm flex flex-col">Nome da rádio
             <input id="cfg-nome" class="input mt-1" placeholder="Rádio Personal">
@@ -267,7 +274,7 @@
         </fieldset>
 
         <!-- 2. Chave da IA -->
-        <fieldset class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+        <fieldset class="glass rounded-2xl p-4 space-y-3">
           <legend class="fieldset-legend-cyan">Inteligência Artificial</legend>
           <label class="text-sm flex flex-col">Provedor
             <select id="cfg-provedor" class="input mt-1">
@@ -285,7 +292,7 @@
         </fieldset>
 
         <!-- 3. Google Drive -->
-        <fieldset class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+        <fieldset class="glass rounded-2xl p-4 space-y-3">
           <legend class="fieldset-legend-cyan">Fonte de Músicas (Google Drive)</legend>
           <label class="text-sm flex flex-col">Link da pasta pública ou ID
             <input id="cfg-drive" class="input mt-1 font-mono text-xs" placeholder="https://drive.google.com/drive/folders/1AbC... ou apenas o ID">
@@ -298,7 +305,7 @@
 
         <div class="flex gap-2">
           <button type="submit" class="btn-primario"><i data-lucide="save" class="w-4 h-4"></i> Salvar configurações</button>
-          <button type="button" id="btn-testar-ia" class="btn-secundario"><i data-lucide="plug-zap" class="w-4 h-4"></i> Testar IA</button>
+          <button type="button" id="btn-testar-ia" class="btn-secundario btn-roxo"><i data-lucide="plug-zap" class="w-4 h-4"></i> Testar IA</button>
         </div>
         <div id="config-feedback" class="text-sm"></div>
       </form>
@@ -309,17 +316,20 @@
   <!-- ============================================================
        PLAYER FIXO INFERIOR (estilo Spotify)
        ============================================================ -->
-  <footer id="player-bar" class="fixed bottom-0 inset-x-0 z-50 bg-zinc-900 border-t border-zinc-800">
+  <footer id="player-bar" class="fixed bottom-0 inset-x-0 z-50 glass rounded-t-2xl border-t border-white/10">
     <div class="max-w-5xl mx-auto px-4 py-2">
       <!-- Barra de progresso -->
-      <div class="h-1 bg-zinc-800 rounded-full overflow-hidden mb-2">
-        <div id="progresso-barra" class="h-full cor-acento-fun w-0 transition-all duration-300"></div>
+      <div class="h-1 bg-white/10 rounded-full overflow-hidden mb-2">
+        <div id="progresso-barra" class="h-full w-0 transition-all duration-300" style="background: linear-gradient(90deg, var(--rp-ciano, #22d3ee), var(--rp-acento, #34d399)); box-shadow: 0 0 12px var(--rp-acento-suave)"></div>
       </div>
       <div class="flex items-center gap-3">
-        <!-- Capa + título -->
+        <!-- Visualizador de onda + capa + título -->
         <div class="flex items-center gap-2.5 min-w-0 flex-1">
-          <div class="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden">
-            <i data-lucide="music-2" id="capa-icone" class="w-5 h-5 text-zinc-500"></i>
+          <div class="ondalink" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden backdrop-blur">
+            <i data-lucide="music-2" id="capa-icone" class="w-5 h-5 text-zinc-400"></i>
           </div>
           <div class="min-w-0">
             <p id="tocando-titulo" class="text-sm font-semibold truncate">Minhas músicas</p>

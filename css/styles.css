@@ -1,8 +1,24 @@
 /* styles.css — extensões minimalistas sobre o Tailwind (tema dark) */
 
 /* ============================================================
+   TEMA GLASSMORPHISM — painéis translúcidos + brilhos coloridos
+   ============================================================ */
+#fundo-glass { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+#fundo-glass .blob { position: absolute; border-radius: 9999px; filter: blur(90px); opacity: .45; }
+#fundo-glass .blob-ciano  { width: 420px; height: 420px; top: -120px; right: -80px;  background: #22d3ee66; }
+#fundo-glass .blob-roxo   { width: 460px; height: 460px; bottom: 10%;   left: -140px; background: #a78bfa55; }
+#fundo-glass .blob-verde  { width: 360px; height: 360px; top: 35%;       right: 10%;  background: var(--rp-acento, #34d399); opacity: .22; }
+
+.glass {
+  background: rgba(255, 255, 255, 0.055) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+/* ============================================================
    TEMAS DINÂMICOS (injetados por js/theme.js a partir da imagem)
-   Padrão: verde esmeralda
    ============================================================ */
 :root {
   --rp-acento: #34d399;
@@ -10,28 +26,35 @@
   --rp-acento-suave: #34d39926;
   --rp-acento-borda: #34d39955;
   --rp-acento-escuro: #022c22;
+  --rp-ciano: #22d3ee;
+  --rp-roxo: #a78bfa;
 }
 
 .tab-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.375rem 0.875rem;
-  border-radius: 0.5rem;
+  padding: 0.375rem 0.9rem;
+  border-radius: 9999px;                 /* pílula */
   font-size: 0.8125rem;
-  font-weight: 600;
-  color: #a1a1aa;            /* zinc-400 */
-  background: #18181b;       /* zinc-900 */
-  border: 1px solid transparent;
+  font-weight: 700;
+  color: #e4e4e7;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   white-space: nowrap;
-  transition: all .15s;
+  transition: all .18s;
 }
-.tab-btn:hover { color: #e4e4e7; }
-.tab-btn.ativo {
-  color: var(--rp-acento);
-  background: var(--rp-acento-suave);
-  border-color: var(--rp-acento-borda);
-}
+.tab-btn:hover { background: rgba(255, 255, 255, 0.12); }
+.tab-btn.ativo { color: #fff; background: var(--rp-acento-suave, #34d39926); border-color: var(--rp-acento-borda, #34d39955); box-shadow: 0 0 18px -4px var(--rp-acento-borda); }
+
+/* Cores por aba (design referência: Player ciano, IA roxo) */
+.tab-btn.t-ciano.ativo { color: #fff; background: #22d3ee26 !important; border-color: #22d3ee66 !important; box-shadow: 0 0 18px -2px #22d3ee88; }
+.tab-btn.t-ciano.ativo svg { color: var(--rp-ciano); stroke: var(--rp-ciano); }
+.tab-btn.t-roxo.ativo { color: #fff; background: #a78bfa26 !important; border-color: #a78bfa66 !important; box-shadow: 0 0 18px -2px #a78bfa88; }
+.tab-btn.t-roxo.ativo svg { color: var(--rp-roxo); stroke: var(--rp-roxo); }
+.tab-btn.t-neutro.ativo { box-shadow: 0 0 16px -4px var(--rp-acento-borda); }
 
 .btn-primario {
   display: inline-flex;
@@ -53,22 +76,34 @@
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  background: #27272a;
+  background: rgba(255, 255, 255, 0.07);
   color: #e4e4e7;
   font-weight: 600;
   font-size: 0.8125rem;
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #3f3f46;
+  border-radius: 9999px;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   transition: background .15s;
 }
-.btn-secundario:hover { background: #3f3f46; }
+.btn-secundario:hover { background: rgba(255, 255, 255, 0.14); }
+
+/* Botões em pílula colorida (Player ciano / IA roxo) */
+.btn-ciano { background: #22d3ee22; border: 1px solid #22d3ee55; color: #e0faff; }
+.btn-ciano:hover { background: #22d3ee33; }
+.btn-ciano svg { color: #67e8f9; }
+.btn-roxo { background: #a78bfa22; border: 1px solid #a78bfa55; color: #f1eafd; }
+.btn-roxo:hover { background: #a78bfa33; }
+.btn-roxo svg { color: #c4b5fd; }
 
 .input {
   width: 100%;
-  background: #18181b;
-  border: 1px solid #3f3f46;
-  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 0.75rem;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   color: #f4f4f5;
@@ -76,9 +111,9 @@
 .input:focus {
   outline: none;
   border-color: var(--rp-acento);
-  box-shadow: 0 0 0 2px var(--rp-acento-suave);
+  box-shadow: 0 0 0 3px var(--rp-acento-suave);
 }
-.input::placeholder { color: #52525b; }
+.input::placeholder { color: #71717a; }
 
 .fieldset-legend-cyan {
   font-size: 0.75rem;
@@ -100,12 +135,23 @@
 }
 .controle:hover { color: #fff; background: #27272a; }
 
-.faixa-item { transition: background .15s; }
-.faixa-item:hover { background: #18181b; }
+.faixa-item { transition: background .15s; border-radius: 0.75rem; }
+.faixa-item:hover { background: rgba(255, 255, 255, 0.06); }
 .faixa-item.tocando {
   background: var(--rp-acento-escuro);
-  box-shadow: inset 3px 0 0 var(--rp-acento);
+  box-shadow: inset 3px 0 0 var(--rp-acento), 0 0 24px -8px var(--rp-acento-borda);
 }
+
+/* Visualizador de onda (equalizador animado no player inferior) */
+.ondalink { display: flex; align-items: flex-end; gap: 2.5px; height: 16px; }
+.ondalink span { width: 3px; border-radius: 2px; background: linear-gradient(to top, var(--rp-ciano), var(--rp-acento)); animation: onda .9s ease-in-out infinite; animation-play-state: paused; opacity: .5; }
+#player-bar.tocando .ondalink span { animation-play-state: running; opacity: 1; }
+#player-bar.tocando .ondalink span:nth-child(1) { animation-delay: 0s;  height: 60%; }
+#player-bar.tocando .ondalink span:nth-child(2) { animation-delay: .15s; height: 100%; }
+#player-bar.tocando .ondalink span:nth-child(3) { animation-delay: .3s; height: 70%; }
+#player-bar.tocando .ondalink span:nth-child(4) { animation-delay: .08s; height: 90%; }
+#player-bar.tocando .ondalink span:nth-child(5) { animation-delay: .22s; height: 55%; }
+@keyframes onda { 0%,100% { transform: scaleY(.45); } 50% { transform: scaleY(1); } }
 
 .range-volume {
   -webkit-appearance: none;
@@ -137,12 +183,15 @@
    ABA AJUDA — passo a passo
    ============================================================ */
 .ajuda-card {
-  background: #18181b;              /* zinc-900 */
-  border: 1px solid #27272a;
-  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border-radius: 1rem;
   padding: 0.25rem 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
-.ajuda-card[open] { border-color: #3f3f46; }
+.ajuda-card[open] { border-color: rgba(255, 255, 255, 0.22); }
 .ajuda-titulo {
   display: flex;
   align-items: center;
@@ -156,7 +205,7 @@
 }
 .ajuda-titulo::-webkit-details-marker { display: none; }
 .ajuda-corpo {
-  border-top: 1px solid #27272a;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0.75rem 0 1rem;
   font-size: 0.875rem;
   color: #d4d4d8;

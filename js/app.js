@@ -326,6 +326,7 @@ function renderStatus(status) {
 
   badge.classList.toggle('hidden', status !== 'tocando');
   badge.classList.toggle('flex', status === 'tocando');
+  $('#player-bar').classList.toggle('tocando', status === 'tocando');
 
   const f = player.getAtual();
   $('#tocando-titulo').textContent = f ? f.nome : 'Minhas músicas';
@@ -394,7 +395,7 @@ function renderProgramacao(prog) {
     .filter(Boolean);
 
   $('#ia-resultado').innerHTML = `
-    <article class="bg-zinc-900 border cor-acento-borda-bor rounded-xl p-4 space-y-3">
+    <article class="glass rounded-2xl p-4 space-y-3 border cor-acento-borda-bor">
       <header>
         <p class="text-xs cor-acento-texto font-semibold uppercase tracking-wider flex items-center gap-1.5">
           <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Programação gerada pela IA
