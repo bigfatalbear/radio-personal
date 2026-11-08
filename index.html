@@ -546,6 +546,14 @@
     </div>
   </footer>
 
+  <!-- Toast: nova versão disponível -->
+  <div id="aviso-update" class="fixed top-4 left-1/2 -translate-x-1/2 z-[80] hidden items-center gap-3 glass rounded-2xl border border-cyan-400/40 px-4 py-3 text-sm" style="box-shadow:0 0 24px -6px var(--rp-acento-suave)">
+    <i data-lucide="refresh-cw" class="w-4 h-4 cor-acento-texto shrink-0"></i>
+    <span><strong class="text-white">Nova versão disponível!</strong> <span class="text-zinc-400">Recarregue para atualizar.</span></span>
+    <button id="btn-atualizar" class="btn-primario text-xs py-1.5 px-3 whitespace-nowrap">Atualizar agora</button>
+    <button id="btn-fechar-update" class="text-zinc-500 hover:text-zinc-200 text-xl leading-none" aria-label="Fechar">×</button>
+  </div>
+
   <audio id="audio" preload="metadata"></audio>
 
   <!-- Ponto de entrada (module ES6) -->
@@ -553,7 +561,43 @@
   <script>
     // Registro do Service Worker em file:// não roda — só em https/Pages
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+      try {
+        const reg = await navigator.serviceWorker.register('sw.js');
+        // ===== Aviso automático de nova versão =====
+        const mostrarAviso = () => {
+          const aviso = document.getElementById('aviso-update');
+          aviso?.classList.remove('hidden');
+          aviso?.classList.add('flex');
+          if (window.lucide) lucide.createIcons();
+        };
+        verificarNovaVersao();
+        reg.addEventListener?.('updatefound', verificarNovaVersao);
+        setInterval(verificarNovaVersao, 60_000); // checa a cada minuto
+
+        let swNovo = null;
+        function verificarNovaVersao() {
+          // enquanto a página atual está sob controle de um SW antigo
+          if (!navigator.serviceWorker.controller) return;
+          const emInstalacao = reg.installing || reg.waiting;
+          if (emInstalacao?.state === 'installed') { swNovo = emInstalacao; mostrarAviso(); return; }
+          if (reg.waiting?.state === 'installed') { swNovo = reg.waiting; mostrarAviso(); return; }
+          if (emInstalacao) {
+            emInstalacao.addEventListener('statechange', () => {
+              if (emInstalacao.state === 'installed') { swNovo = emInstalacao; mostrarAviso(); }
+            });
+          }
+        }
+        document.getElementById('btn-atualizar')?.addEventListener('click', () => {
+          swNovo?.postMessage('PULAR_ESPERA');
+          navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
+          // Se a nova versão já assumiu o controle antes do listener pegar, força:
+          setTimeout(() => location.reload(), 2500);
+        });
+        document.getElementById('btn-fechar-update')?.addEventListener('click', () => {
+          const aviso = document.getElementById('aviso-update');
+          aviso?.classList.remove('flex'); aviso?.classList.add('hidden');
+        });
+      } catch { /* registro falhou (sem https etc.) — sem aviso */ }
     }
   </script>
 </body>

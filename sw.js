@@ -27,6 +27,11 @@ self.addEventListener('install', (e) => {
     .then(() => self.skipWaiting()));
 });
 
+// Comando do aviso "Nova versão disponível → Atualizar"
+self.addEventListener('message', (e) => {
+  if (e.data === 'PULAR_ESPERA') self.skipWaiting();
+});
+
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
