@@ -4,7 +4,7 @@
  * (token client) + escopo `drive.file`: nada além dos arquivos criados por aqui.
  * As playlists vão num JSON `radio-personal-playlists.json` dentro da sua pasta.
  */
-import { getConfig } from './settings.js';
+import { getConfig, extrairDriveId } from './settings.js';
 
 const ESCOPO = 'https://www.googleapis.com/auth/drive.file';
 const NOME_ARQUIVO = 'radio-personal-playlists.json';
@@ -63,7 +63,7 @@ async function localizarArquivo(token, pastaId) {
 
 /** Salva (cria ou atualiza) o JSON de playlists na pasta compartilhada. */
 export async function salvarNoDrive(conteudo) {
-  const pastaId = getConfig().driveFonte?.trim();
+  const pastaId = extrairDriveId(getConfig().driveFonte);
   if (!pastaId) throw new Error('Configure a pasta do Drive antes de sincronizar.');
   const token = await obterToken();
   const id = await localizarArquivo(token, pastaId);
@@ -87,7 +87,7 @@ export async function salvarNoDrive(conteudo) {
 
 /** Baixa o JSON de playlists do Drive. @returns {Promise<obj|null>} null se nunca sincronizado */
 export async function restaurarDoDrive() {
-  const pastaId = getConfig().driveFonte?.trim();
+  const pastaId = extrairDriveId(getConfig().driveFonte);
   if (!pastaId) throw new Error('Configure a pasta do Drive antes de sincronizar.');
   const token = await obterToken();
   const id = await localizarArquivo(token, pastaId);
