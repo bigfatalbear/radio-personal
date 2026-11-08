@@ -11,6 +11,15 @@ import { conectar as conectarFX, instalarAbafar } from './audiofx.js';
 const audio = new Audio();
 audio.preload = 'metadata';
 
+// ===== MediaSession: controles na tela de bloqueio + áudio garantido desligado =====
+const mediaSession = navigator.mediaSession;
+mediaSession?.setActionHandler?.('play', () => playPause());
+mediaSession?.setActionHandler?.('pause', () => playPause());
+mediaSession?.setActionHandler?.('previoustrack', () => anterior());
+mediaSession?.setActionHandler?.('nexttrack', () => proxima());
+mediaSession?.setActionHandler?.('seekbackward', () => { audio.currentTime = Math.max(0, audio.currentTime - 10); });
+mediaSession?.setActionHandler?.('seekforward', () => { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10); });
+
 // ===== Estado =====
 let fila = [];        // [{origem: 'drive'|'local', id?: string, url?: string, nome: string}]
 let indiceAtual = -1;
@@ -95,6 +104,16 @@ export async function tocar(indice = null) {
 
   audio.src = url;
   audio.load();
+  // Metadados para a tela de bloqueio/notificação (capa = logo da rádio, se houver)
+  if (mediaSession) {
+    mediaSession.metadata = new MediaMetadata({
+      title: faixa.nome,
+      artist: nomeRadio,
+      album: 'Rádio Personal',
+      artwork: window.__radioLogoUrl ? [{ src: window.__radioLogoUrl, sizes: '256x256', type: 'image/png' }] : [],
+    });
+    mediaSession.playbackState = 'playing';
+  }
   try {
     await audio.play();
     callbacks.onStatus('tocando');
@@ -148,8 +167,8 @@ audio.addEventListener('ended', async () => {
   }
   proxima();
 });
-audio.addEventListener('play', () => callbacks.onStatus('tocando'));
-audio.addEventListener('pause', () => callbacks.onStatus('pausado'));
+audio.addEventListener('play', () => { callbacks.onStatus('tocando'); mediaSession && (mediaSession.playbackState = 'playing'); });
+audio.addEventListener('pause', () => { pararTTS(); mediaSession && (mediaSession.playbackState = 'paused'); callbacks.onStatus('pausado'); });
 audio.addEventListener('error', () => {
   // Arquivo do Drive indisponível (privado/CORS)? Pula para a próxima.
   pararTTS();

@@ -294,6 +294,9 @@ function aplicarIdentidade() {
   }
   document.title = `${rádio.nome || 'Rádio Personal'} — Sua rádio no ar`;
   player.setNomeRadio(rádio.nome); // usado na locução TTS
+  // Logo como capa da música na tela de bloqueio (MediaSession)
+  window.__radioLogoUrl = rádio.logo?.startsWith('data:image/png') ? rádio.logo
+    : rádio.logo?.startsWith('data:image') ? rádio.logo : rádio.logo || '';
 }
 
 function mostrarFeedback(msg, cor = 'cor-acento-texto') {
