@@ -52,3 +52,64 @@ export function carregarPlaylist(id) {
   if (!p) throw new Error('Playlist não encontrada.');
   return p.faixas.filter((f) => f.origem !== 'local' || f.url);
 }
+
+/**
+ * Adiciona a playlist. `faixas` = array de {id?, nome, origem?, videoId?}.
+ */
+function limparFaixa(f) {
+  if (f.origem === 'youtube') return { origem: 'youtube', videoId: f.videoId, nome: f.nome, canal: f.canal };
+  if (f.origem === 'local') return { origem: 'local', nome: f.nome, url: f.url };
+  return { origem: 'drive', id: f.id, nome: f.nome };
+}
+
+export function renomearPlaylist(id, novoNome) {
+  if (!novoNome?.trim()) throw new Error('Novo nome vazio.');
+  const listas = getPlaylists();
+  const p = listas.find((x) => x.id === id);
+  if (!p) throw new Error('Playlist não encontrada.');
+  p.nome = novoNome.trim();
+  gravar(KEY_PLAYLISTS, listas);
+}
+
+/** Move (reordena) faixa dentro da playlist. */
+export function trocarFaixa(id, de, para) {
+  const listas = getPlaylists();
+  const p = listas.find((x) => x.id === id);
+  if (!p) throw new Error('Playlist não encontrada.');
+  const [f] = p.faixas.splice(de, 1);
+  p.faixas.splice(para, 0, f);
+  gravar(KEY_PLAYLISTS, listas);
+}
+
+/** Remove faixa da playlist pelo índice. */
+export function removerFaixa(id, index) {
+  const listas = getPlaylists();
+  const p = listas.find((x) => x.id === id);
+  if (!p) throw new Error('Playlist não encontrada.');
+  p.faixas.splice(index, 1);
+  gravar(KEY_PLAYLISTS, listas);
+}
+
+/** Importa playlists + favoritos (JSON salvo no Drive), mesclando com as locais. */
+export function importarDoDrive(listas, favoritos = []) {
+  if (!Array.isArray(listas)) throw new Error('Formato de sincronização inesperado.');
+  const atuais = getPlaylists();
+  const mapa = new Map(atuais.map((p) => [p.id, p]));
+  for (const p of listas) {
+    if (!p?.id) continue;
+    mapa.set(p.id, { ...mapa.get(p), ...p, faixas: (p.faixas ?? []).map(limparFaixa) });
+  }
+  gravar(KEY_PLAYLISTS, [...mapa.values()]);
+  if (Array.isArray(favoritos) && favoritos.length) {
+    gravar(KEY_FAVORITOS, [...new Set([...getFavoritos(), ...favoritos])]);
+  }
+}
+
+/** JSON completo de playlists + favoritos (para salvar no Drive). */
+export function exportarParaDrive() {
+  return {
+    playlists: getPlaylists().map((p) => ({ ...p, faixas: p.faixas.map(limparFaixa) })),
+    favoritos: getFavoritos(),
+    exportado: Date.now(),
+  };
+}

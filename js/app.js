@@ -14,6 +14,7 @@ import { setEq, iniciarVisualizador, aplicarValores as eqAplicar } from './audio
 import { listarVozes } from './tts.js';
 import * as wakelock from './wakelock.js';
 import * as yt from './youtube.js';
+import * as sync from './sync.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -68,6 +69,7 @@ function atualizarUIExtra() {
   vincularYouTube();
   vincularLinksChave();
   vincularPix();
+  vincularGerenciarPlaylists();
 }
 
 /** Botões de link para gerar chaves + destaque no provedor ativo. */
@@ -279,6 +281,7 @@ function preencherFormConfig() {
   $('#cfg-provedor').value = cfg.provedor || 'gemini';
   $('#cfg-apikey').value = cfg.apiKey || '';
   $('#cfg-ytkey').value = cfg.youtubeApiKey || '';
+  $('#cfg-oauthcid').value = cfg.oauthClientId || '';
   $('#cfg-drive').value = cfg.driveFonte || '';
 }
 
@@ -289,6 +292,7 @@ function aoSalvarConfig(e) {
     provedor: $('#cfg-provedor').value,
     apiKey: $('#cfg-apikey').value.trim(),
     youtubeApiKey: $('#cfg-ytkey').value.trim(),
+    oauthClientId: $('#cfg-oauthcid').value.trim(),
     driveFonte: $('#cfg-drive').value.trim(),
     rádio: {
       nome: $('#cfg-nome').value.trim() || 'Rádio Personal',
@@ -937,4 +941,132 @@ function vincularPix() {
   });
 
   modal.style.display = 'none'; // garante estado inicial
+}
+
+// ============================================================
+// GERENCIAR PLAYLISTS (modal) + sincronização com o Drive
+// ============================================================
+function vincularGerenciarPlaylists() {
+  const modal = $('#modal-playlists');
+  if (!modal) return;
+  const fechar = () => { modal.style.display = 'none'; };
+  const abrir = () => {
+    modal.style.display = 'grid';
+    renderGerenciarPlaylists();
+    if (window.lucide) lucide.createIcons();
+  };
+  // Delegação global (idêntica ao padrão da PIX modal)
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#btn-gerenciar-playlist')) { abrir(); return; }
+    if (e.target.closest('#mp-fechar') || e.target === modal) { fechar(); return; }
+    const alvo = e.target.closest('[data-mp]');
+    if (!alvo) return;
+    const [acao, id, arg] = alvo.getAttribute('data-mp').split('|');
+    
+    try {
+      if (acao === 'tocar') {
+        player.setFila(playlists.carregarPlaylist(id));
+        player.tocar(0);
+        fechar();
+        feedbackAviso('✔ Playlist tocando.');
+      }
+      if (acao === 'renomear') {
+        playlists.renomearPlaylist(id, prompt('Novo nome da playlist:') || '');
+        renderGerenciarPlaylists();
+        atualizarSelectPlaylists();
+      }
+      if (acao === 'excluir') {
+        if (confirm('Excluir esta playlist permanentemente?')) {
+          playlists.removerPlaylist(id);
+          renderGerenciarPlaylists();
+          atualizarSelectPlaylists();
+        }
+      }
+      if (acao === 'cima' || acao === 'baixo') {
+        playlists.trocarFaixa(id, Number(arg), Number(arg) + (acao === 'cima' ? -1 : 1));
+        renderGerenciarPlaylists();
+      }
+      if (acao === 'remover-faixa') {
+        playlists.removerFaixa(id, Number(arg));
+        renderGerenciarPlaylists();
+      }
+      if (acao === 'add-fila') {
+        // adiciona a fila atual ao fim da playlist
+        const lista = player.getFila();
+        if (!lista.length) return alert('A fila está vazia — carregue o Drive ou o YouTube primeiro.');
+        const atuais = playlists.getPlaylists();
+        const p = atuais.find((x) => x.id === id);
+        if (p) {
+          p.faixas = [...p.faixas, ...lista.map(({ id: fid, nome, origem, url, videoId, canal }) =>
+            (origem === 'youtube' ? { origem: 'youtube', videoId, nome, canal }
+              : origem === 'local' ? { origem: 'local', nome, url }
+              : { origem: 'drive', id: fid, nome }))];
+          localStorage.setItem('radioPersonal:playlists', JSON.stringify(atuais));
+          renderGerenciarPlaylists();
+          feedbackAviso(`✔ ${lista.length} faixa(s) adicionadas à playlist.`);
+        }
+      }
+      if (window.lucide) lucide.createIcons();
+    } catch (err) { alert(err.message); }
+  });
+
+  // ===== Sincronização com o Drive =====
+  $('#mp-salvar-drive')?.addEventListener('click', async () => {
+    const st = $('#mp-status');
+    try {
+      st.textContent = 'Entrando na conta Google…';
+      const r = await sync.salvarNoDrive(playlists.exportarParaDrive());
+      st.textContent = r.criado ? '✔ Arquivo "radio-personal-playlists.json" criado na sua pasta do Drive!'
+        : '✔ Playlists atualizadas no arquivo do Drive.';
+    } catch (err) {
+      st.textContent = '✖ ' + err.message;
+    }
+  });
+  $('#mp-ler-drive')?.addEventListener('click', async () => {
+    const st = $('#mp-status');
+    try {
+      st.textContent = 'Lendo do Drive…';
+      const json = await sync.restaurarDoDrive();
+      if (!json) { st.textContent = 'Nenhuma playlist salva no Drive ainda — use "Salvar no Drive" primeiro.'; return; }
+      playlists.importarDoDrive(json.playlists, json.favoritos);
+      renderGerenciarPlaylists();
+      atualizarSelectPlaylists();
+      renderFila();
+      st.textContent = `✔ ${json.playlists?.length ?? 0} playlist(s) restauradas do Drive.`;
+    } catch (err) {
+      st.textContent = '✖ ' + err.message;
+    }
+  });
+}
+
+function renderGerenciarPlaylists() {
+  const cont = $('#mp-lista');
+  const listas = playlists.getPlaylists();
+  cont.innerHTML = listas.length === 0
+    ? '<p class="text-zinc-500 italic text-center py-6">Nenhuma playlist salva ainda.<br>Monte uma fila e clique no botão de salvar (💾) na aba Player.</p>'
+    : listas.map((p) => `
+    <details class="bg-white/[0.04] border border-white/10 rounded-xl overflow-hidden">
+      <summary class="flex items-center gap-2 px-3 py-2.5 cursor-pointer">
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500"></i>
+        <span class="font-semibold flex-1 truncate">${p.nome}</span>
+        <span class="text-xs text-zinc-500">${p.faixas.length} faixas</span>
+        <span class="flex gap-1">
+          <button data-mp="tocar|${p.id}" class="btn-secundario p-1" title="Tocar"><i data-lucide="play" class="w-3.5 h-3.5"></i></button>
+          <button data-mp="renomear|${p.id}" class="btn-secundario p-1" title="Renomear"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
+          <button data-mp="excluir|${p.id}" class="btn-secundario p-1 hover:text-red-400" title="Excluir"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </span>
+      </summary>
+      <ul class="px-3 pb-3 space-y-0.5">
+        ${p.faixas.map((f, i) => `
+        <li class="flex items-center gap-1.5 text-xs py-1 px-1 rounded hover:bg-white/5">
+          <span class="flex-1 truncate">${f.nome}</span>
+          <button data-mp="cima|${p.id}|${i}" class="p-1 text-zinc-500 hover:text-zinc-200 ${i === 0 ? 'opacity-30 pointer-events-none' : ''}" title="Mover para cima"><i data-lucide="arrow-up" class="w-3 h-3"></i></button>
+          <button data-mp="baixo|${p.id}|${i}" class="p-1 text-zinc-500 hover:text-zinc-200 ${i === p.faixas.length - 1 ? 'opacity-30 pointer-events-none' : ''}" title="Mover para baixo"><i data-lucide="arrow-down" class="w-3 h-3"></i></button>
+          <button data-mp="remover-faixa|${p.id}|${i}" class="p-1 text-zinc-500 hover:text-red-400" title="Remover da playlist"><i data-lucide="x" class="w-3 h-3"></i></button>
+        </li>`).join('')}
+      </ul>
+      <div class="px-3 pb-3">
+        <button data-mp="add-fila|${p.id}" class="btn-secundario text-xs py-1 w-full"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Adicionar fila atual a esta playlist</button>
+      </div>
+    </details>`).join('');
 }
