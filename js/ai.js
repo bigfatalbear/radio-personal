@@ -5,6 +5,25 @@
  */
 import { getConfig } from './settings.js';
 
+/** Configuração dos provedores de IA suportados (todos OpenAI-compatíveis, exceto Gemini). */
+export const PROVEDORES_IA = {
+  groq: {
+    nome: 'Groq (Llama — gratuito e ultra-rápido)',
+    endpoint: 'https://api.groq.com/openai/v1/chat/completions',
+    modelo: 'llama-3.3-70b-versatile',
+    site: 'https://console.groq.com/keys',
+  },
+  gemini: {
+    nome: 'Google Gemini (gratuito)',
+  },
+  openai: {
+    nome: 'OpenAI (pago)',
+    endpoint: 'https://api.openai.com/v1/chat/completions',
+    modelo: 'gpt-4o-mini',
+    site: 'https://platform.openai.com/api-keys',
+  },
+};
+
 /** Verifica se a chave de IA está configurada */
 export function iaDisponivel() {
   return Boolean(getConfig().apiKey);
@@ -53,7 +72,8 @@ export async function gerarProgramacao({ descricao, horas = 2, estilo = 'descont
   const prompt = montarPrompt({ descricao, horas, estilo, acervo: acervoRef?.() ?? [] });
 
   if (cfg.provedor === 'gemini') return chamarGemini(prompt, cfg.apiKey);
-  return chamarOpenAI(prompt, cfg.apiKey);
+  // Groq e OpenAI falam o mesmo protocolo OpenAI-compatible
+  return chamarOpenAICompativel(prompt, cfg.apiKey, cfg.provedor);
 }
 
 /** Referência ao acervo injetada por app.js (evita import circular). */
@@ -88,16 +108,17 @@ async function chamarGemini(prompt, key) {
   return parseJSON(texto);
 }
 
-/** OpenAI API (chat completions) */
-async function chamarOpenAI(prompt, key) {
-  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+/** OpenAI API (chat completions) — também usada pelo Groq (protocolo idêntico) */
+async function chamarOpenAICompativel(prompt, key, provedor) {
+  const p = PROVEDORES_IA[provedor] ?? PROVEDORES_IA.openai;
+  const resp = await fetch(p.endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${key}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: p.modelo,
       temperature: 0.8,
       response_format: { type: 'json_object' },
       messages: [
@@ -106,9 +127,13 @@ async function chamarOpenAI(prompt, key) {
       ],
     }),
   });
-  if (resp.status === 401) throw new Error('Chave da API OpenAI inválida. Verifique sua chave em platform.openai.com.');
-  if (resp.status === 429) throw new Error('Limite de uso da API OpenAI atingido (429).');
-  if (!resp.ok) throw new Error(`Erro da API OpenAI (${resp.status}).`);
+  if (resp.status === 401) throw new Error(`Chave da API ${provedor} inválida. Gere uma nova em ${p.site}`);
+  if (resp.status === 429) throw new Error(`Limite de uso da API ${provedor} atingido (429).`);
+  if (!resp.ok) {
+    let detalhe = '';
+    try { detalhe = ' — ' + (((await resp.json())?.error?.message) ?? ''); } catch { /* ignore */ }
+    throw new Error(`Erro da API ${provedor} (${resp.status})${detalhe}`);
+  }
   const json = await resp.json();
   return parseJSON(json.choices?.[0]?.message?.content ?? '');
 }
@@ -127,11 +152,12 @@ export async function testarIA() {
     if (!r.ok) throw new Error(`Gemini respondeu ${r.status} — verifique a chave.`);
     return 'Conexão com Gemini OK ✔';
   }
-  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+  const p = PROVEDORES_IA[cfg.provedor] ?? PROVEDORES_IA.openai;
+  const r = await fetch(p.endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.apiKey}` },
-    body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: pingPrompt }] }),
+    body: JSON.stringify({ model: p.modelo, messages: [{ role: 'user', content: pingPrompt }] }),
   });
-  if (!r.ok) throw new Error(`OpenAI respondeu ${r.status} — verifique a chave.`);
-  return 'Conexão com OpenAI OK ✔';
+  if (!r.ok) throw new Error(`${cfg.provedor} respondeu ${r.status} — verifique a chave em ${p.site}.`);
+  return `Conexão com ${cfg.provedor === 'groq' ? 'Groq' : 'OpenAI'} OK ✔`;
 }

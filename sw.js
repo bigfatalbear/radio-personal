@@ -2,7 +2,7 @@
  * sw.js — Service Worker do Rádio Personal (cache básico / offline da UI).
  * O streaming de áudio (Drive ou local) NUNCA é cacheado.
  */
-const CACHE = 'radio-personal-v4';
+const CACHE = 'radio-personal-v5';
 const SHELL = [
   './',
   './index.html',
@@ -13,6 +13,11 @@ const SHELL = [
   './js/drive.js',
   './js/ai.js',
   './js/player.js',
+  './js/playlists.js',
+  './js/offline.js',
+  './js/tts.js',
+  './js/audiofx.js',
+  './js/scheduler.js',
 ];
 
 self.addEventListener('install', (e) => {
@@ -33,9 +38,8 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
 
   // Nunca intercepta: APIs de IA, Google APIs e streams de áudio do Drive
-  if (/(\.mp3|m4a|aac|ogg|wav|opus)$/i.test(url) ||
-      /generativelanguage\.googleapis\.com|api\.openai\.com|googleapis\.com\/drive|drive\.usercontent\.google\.com/.test(url) ||
-      url.startsWith('blob:')) {
+  if (/generativelanguage\.googleapis\.com|api\.openai\.com|api\.groq\.com|googleapis\.com\/drive|drive\.usercontent\.google\.com/.test(url) ||
+      url.startsWith('blob:') || url.startsWith('data:') || url.includes('offline.radio-p')) {
     return; // rede direta
   }
 

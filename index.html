@@ -100,6 +100,17 @@
         </label>
       </div>
 
+      <!-- Playlists salvas + ações offline -->
+      <div class="glass rounded-2xl p-3 mt-4 flex flex-wrap items-center gap-2">
+        <i data-lucide="list-music" class="w-4 h-4 text-zinc-400 shrink-0"></i>
+        <select id="sel-playlist" class="input flex-1 min-w-40 text-sm"><option value="">— Playlists salvas —</option></select>
+        <button id="btn-carregar-playlist" class="btn-secundario btn-ciano" title="Carregar playlist selecionada"><i data-lucide="play" class="w-4 h-4"></i></button>
+        <button id="btn-salvar-playlist" class="btn-secundario btn-roxo" title="Salvar a fila atual como playlist"><i data-lucide="save" class="w-4 h-4"></i></button>
+        <span class="w-px h-6 bg-white/10 mx-1"></span>
+        <button id="btn-baixar-tudo" class="btn-secundario" title="Baixar a fila atual para ouvir offline"><i data-lucide="download" class="w-4 h-4"></i></button>
+        <span id="offline-info" class="text-xs text-zinc-500">0 faixas offline</span>
+      </div>
+
       <ul id="lista-fila" class="mt-4 flex flex-col gap-1"></ul>
     </section>
 
@@ -142,6 +153,7 @@
       </form>
 
       <div id="ia-resultado" class="mt-4"></div>
+      <div id="programacoes-salvas" class="mt-4"></div>
     </section>
 
     <!-- ============================================================
@@ -172,9 +184,10 @@
           <summary class="ajuda-titulo"><span class="passo-n cor-acento-fun">2</span> Configure a chave da IA <span class="ml-auto text-xs text-zinc-500">aba Configurações</span><span data-status-passo="2" class="ml-auto text-xs text-zinc-500">pendente</span></summary>
           <div class="ajuda-corpo">
             <ol class="lista-passos">
-              <li>No bloco <strong>Inteligência Artificial</strong>, escolha o provedor: <strong>Gemini</strong> (gratuito, recomendado) ou <strong>OpenAI</strong> (pago).</li>
+              <li>No bloco <strong>Inteligência Artificial</strong>, escolha o provedor: <strong>Groq</strong> (gratuito e ultra-rápido, recomendado), <strong>Gemini</strong> (gratuito) ou <strong>OpenAI</strong> (pago).</li>
               <li>Gere a chave:
                 <ul class="lista-sub">
+                  <li><strong>Groq:</strong> acesse <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a> → "Create API Key" → copie (começa com <code>gsk_...</code>).</li>
                   <li><strong>Gemini:</strong> acesse <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com/app/apikey</a> → "Criar chave da API" → copie (começa com <code>AIza...</code>).</li>
                   <li><strong>OpenAI:</strong> acesse <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a> → "Create new secret key" → copie (começa com <code>sk-...</code>).</li>
                 </ul>
@@ -228,6 +241,7 @@
             <p class="mt-3 mb-1 font-semibold text-zinc-300">Problemas comuns:</p>
             <ul class="lista-sub">
               <li><strong>"Nenhuma chave de API de IA configurada"</strong> → refaça o Passo 2.</li>
+              <li><strong>Equalizador visualmudo / espectro zerado</strong> → faixas do Drive sem CORS não alimentam o analisador; use o botão ⬇ (baixar) para espectro real.</li>
               <li><strong>Erro 403 ao carregar o Drive</strong> → pasta não está pública ou Drive API desativada (Passo 3).</li>
               <li><strong>Música não toca</strong> → arquivo não tem permissão pública, formato não suportado, ou falta de internet (streams do Drive exigem rede).</li>
               <li><strong>Limite 429 na IA</strong> → cota gratuita atingida; aguarde alguns minutos.</li>
@@ -278,20 +292,67 @@
           <legend class="fieldset-legend-cyan">Inteligência Artificial</legend>
           <label class="text-sm flex flex-col">Provedor
             <select id="cfg-provedor" class="input mt-1">
-              <option value="gemini">Google Gemini API</option>
-              <option value="openai">OpenAI API</option>
+              <option value="groq">Groq — Llama (gratuito, ultra-rápido)</option>
+              <option value="gemini">Google Gemini API (gratuito)</option>
+              <option value="openai">OpenAI API (pago)</option>
             </select>
           </label>
           <label class="text-sm flex flex-col">Chave da API (armazenada apenas neste navegador)
-            <input id="cfg-apikey" type="password" autocomplete="off" class="input mt-1 font-mono" placeholder="AIza... ou sk-...">
+            <input id="cfg-apikey" type="password" autocomplete="off" class="input mt-1 font-mono" placeholder="gsk_... (Groq), AIza... (Gemini) ou sk-... (OpenAI)">
           </label>
+          <p id="cfg-provedor-ajuda" class="text-xs text-zinc-500 flex items-start gap-1.5">
+            <i data-lucide="key-round" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
+            <span>Groq: crie a chave gratuita em <a href="https://console.groq.com/keys" target="_blank" rel="noopener" class="underline">console.groq.com/keys</a> (começa com <code>gsk_...</code>).</span>
+          </p>
           <p class="text-xs text-zinc-500 flex items-start gap-1.5">
             <i data-lucide="shield-check" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
             A chave é salva via <code class="text-zinc-400">localStorage</code> e nunca sai do seu navegador (exceto para a API do provedor escolhido).
           </p>
         </fieldset>
 
-        <!-- 3. Google Drive -->
+        <!-- 3. Locução automática (TTS) + Equalizador -->
+        <fieldset class="glass rounded-2xl p-4 space-y-3">
+          <legend class="fieldset-legend-cyan">Locução & Áudio</legend>
+
+          <label class="flex items-center gap-2 text-sm font-medium">
+            <input id="cfg-tts-ativo" type="checkbox" class="w-4 h-4 accent-cyan-500">
+            Locutor automático (fala o nome da próxima faixa entre músicas)
+          </label>
+
+          <div class="grid grid-cols-2 gap-3">
+            <label class="text-sm flex flex-col">Voz do locutor
+              <select id="cfg-tts-voz" class="input mt-1"><option value="">Padrão do dispositivo (PT-BR)</option></select>
+            </label>
+            <label class="text-sm flex flex-col">Estilo da fala
+              <select id="cfg-tts-estilo" class="input mt-1">
+                <option value="padrao">Padrão (entusiasta)</option>
+                <option value="formal">Formal</option>
+                <option value="festa">Festa</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="text-sm flex flex-col">Velocidade da fala: <span id="cfg-tts-vel-valor" class="cor-acento-texto font-semibold">1.0×</span>
+            <input id="cfg-tts-velocidade" type="range" min="0.5" max="1.6" step="0.1" value="1" class="range-volume mt-1">
+          </label>
+
+          <div class="pt-2 border-t border-white/10">
+            <p class="text-xs font-semibold text-zinc-400 uppercase mb-2 flex items-center gap-1.5">
+              <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i> Equalizador
+            </p>
+            <div class="grid grid-cols-3 gap-3 text-xs">
+              <label>Graves<input id="eq-bass" type="range" min="-10" max="10" value="0" class="range-volume w-full"></label>
+              <label>Médios<input id="eq-mid" type="range" min="-10" max="10" value="0" class="range-volume w-full"></label>
+              <label>Agudos<input id="eq-treble" type="range" min="-10" max="10" value="0" class="range-volume w-full"></label>
+            </div>
+            <p class="text-xs text-zinc-500 mt-1.5 flex items-start gap-1.5">
+              <i data-lucide="activity" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
+              Conecta automaticamente na próxima música tocada. O visualizador de espectro já aparece no player fixo.
+            </p>
+          </div>
+        </fieldset>
+
+        <!-- 4. Google Drive -->
         <fieldset class="glass rounded-2xl p-4 space-y-3">
           <legend class="fieldset-legend-cyan">Fonte de Músicas (Google Drive)</legend>
           <label class="text-sm flex flex-col">Link da pasta pública ou ID

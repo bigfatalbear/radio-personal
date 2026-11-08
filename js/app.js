@@ -7,6 +7,11 @@ import { listarFaixasDrive, getAcervo } from './drive.js';
 import { gerarProgramacao, testarIA, iaDisponivel, setAcervoProvider } from './ai.js';
 import { extrairPaleta, aplicarTema, redimensionarImagem } from './theme.js';
 import * as player from './player.js';
+import * as playlists from './playlists.js';
+import * as offline from './offline.js';
+import * as scheduler from './scheduler.js';
+import { setEq, iniciarVisualizador, aplicarValores as eqAplicar } from './audiofx.js';
+import { listarVozes } from './tts.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -25,8 +30,33 @@ document.addEventListener('DOMContentLoaded', () => {
   aplicarTemaSalvo();
   atualizarAvisos();
   atualizarSeloDrive();
+  atualizarUIExtra();          // playlists, TTS, EQ, offline
+  renderizarProgramacoesSalvas();
+  scheduler.iniciar(getAcervo, player.setFila, player.tocar); // grade horária automática
   renderizarStatusPassos();
 });
+
+/** Popula e vincula os controles novos: playlists, TTS, equalizador, offline. */
+function atualizarUIExtra() {
+  atualizarSelectPlaylists();
+  // TTS: vozes do dispositivo → <select>
+  const selVoz = $('#cfg-tts-voz');
+  const cfg = getConfig();
+  setTimeout(() => {
+    selVoz.innerHTML = '<option value="">Padrão do dispositivo (PT-BR)</option>' +
+      listarVozes().map((v) => `<option value="${v.uri}">${v.nome} (${v.lang})</option>`).join('');
+  }, 300); // vozes carregam async no Chrome
+  $('#cfg-tts-ativo').checked = Boolean(cfg.tts?.ativo);
+  $('#cfg-tts-voz').value = cfg.tts?.voz ?? '';
+  $('#cfg-tts-estilo').value = cfg.tts?.estilo ?? 'padrao';
+  $('#cfg-tts-velocidade').value = cfg.tts?.velocidade ?? 1;
+  $('#cfg-tts-vel-valor').textContent = `${(Number(cfg.tts?.velocidade) || 1).toFixed(1)}×`;
+  $('#eq-bass').value = cfg.eq?.bass ?? 0;
+  $('#eq-mid').value = cfg.eq?.mid ?? 0;
+  $('#eq-treble').value = cfg.eq?.treble ?? 0;
+  atualizarOfflineInfo();
+  iniciarVisualizador();
+}
 
 // ============================================================
 // NAVEGAÇÃO
@@ -68,6 +98,44 @@ function vincularEventos() {
   });
   $$('[data-ir-ajuda]').forEach((el) => el.addEventListener('click', () =>
     document.querySelector('[data-tab="ajuda"]')?.click()));
+
+  // ===== Playlists / favoritos / offline =====
+  $('#btn-carregar-playlist')?.addEventListener('click', () => {
+    const id = $('#sel-playlist').value;
+    if (!id) return;
+    try {
+      player.setFila(playlists.carregarPlaylist(id));
+      player.tocar(0);
+      feedbackAviso('Playlist carregada e tocando.');
+    } catch (err) { feedbackAviso('✖ ' + err.message); }
+  });
+  $('#btn-salvar-playlist')?.addEventListener('click', () => {
+    const nome = prompt('Nome da playlist (a fila atual será salva):');
+    if (nome === null) return;
+    try {
+      playlists.salvarPlaylist(nome, player.getFila());
+      atualizarSelectPlaylists(nome.trim());
+      feedbackAviso('✔ Playlist "' + nome.trim() + '" salva.');
+    } catch (err) { feedbackAviso('✖ ' + err.message); }
+  });
+  $('#btn-baixar-tudo')?.addEventListener('click', baixarFilaOffline);
+
+  // ===== Equalizador =====
+  ['eq-bass', 'eq-mid', 'eq-treble'].forEach((id) => {
+    $(`#${id}`)?.addEventListener('input', () => setEq({
+      bass: $('#eq-bass').value, mid: $('#eq-mid').value, treble: $('#eq-treble').value,
+    }));
+  });
+  // ===== TTS (instantâneo) =====
+  $('#cfg-tts-ativo')?.addEventListener('change', (e) => salvarConfig({ tts: { ativo: e.target.checked } }));
+  $('#cfg-tts-voz')?.addEventListener('change', (e) => salvarConfig({ tts: { voz: e.target.value } }));
+  $('#cfg-tts-estilo')?.addEventListener('change', (e) => salvarConfig({ tts: { estilo: e.target.value } }));
+  $('#cfg-tts-velocidade')?.addEventListener('input', (e) => {
+    const v = Number(e.target.value);
+    $('#cfg-tts-vel-valor').textContent = `${v.toFixed(1)}×`;
+    salvarConfig({ tts: { velocidade: v } });
+  });
+
   // Some o onboarding se o usuário já viu ou já configurou a IA
   if (localStorage.getItem('radioPersonal:onboarding') || getConfig().apiKey) {
     $('#onboarding')?.remove();
@@ -225,6 +293,7 @@ function aplicarIdentidade() {
     logo.classList.add('hidden');
   }
   document.title = `${rádio.nome || 'Rádio Personal'} — Sua rádio no ar`;
+  player.setNomeRadio(rádio.nome); // usado na locução TTS
 }
 
 function mostrarFeedback(msg, cor = 'cor-acento-texto') {
@@ -295,7 +364,9 @@ function renderFila() {
   const fila = player.getFila();
   $('#aviso-player')?.classList.toggle('hidden', fila.length > 0);
 
-  lista.innerHTML = fila.map((f, i) => `
+  lista.innerHTML = fila.map((f, i) => {
+    const fav = playlists.ehFavorito(f.nome);
+    return `
     <li class="faixa-item flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer ${i === player.getIndice() ? 'tocando' : ''}"
         data-indice="${i}">
       <span class="w-6 text-center text-xs font-mono ${i === player.getIndice() ? 'cor-acento-texto' : 'text-zinc-500'}">
@@ -305,10 +376,25 @@ function renderFila() {
         <p class="text-sm font-medium truncate">${f.nome}</p>
         <p class="text-xs text-zinc-500">${f.origem === 'drive' ? 'Google Drive' : 'Arquivo local'}</p>
       </div>
-    </li>`).join('');
+      <button data-fav="${i}" class="shrink-0 ${fav ? 'text-pink-400' : 'text-zinc-600 hover:text-pink-300'} transition"
+              title="${fav ? 'Remover dos favoritos' : 'Favoritar'}">
+        <i data-lucide="${fav ? 'heart' : 'heart'}" class="w-4 h-4 ${fav ? 'fill-current' : ''}"></i>
+      </button>
+    </li>`;
+  }).join('');
 
   lista.querySelectorAll('[data-indice]').forEach((li) => {
-    li.addEventListener('click', () => player.tocar(Number(li.dataset.indice)));
+    li.addEventListener('click', (e) => {
+      if (e.target.closest('[data-fav]')) return;
+      player.tocar(Number(li.dataset.indice));
+    });
+  });
+  lista.querySelectorAll('[data-fav]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      playlists.alternarFavorito(player.getFila()[Number(btn.dataset.fav)].nome);
+      renderFila();
+      if (window.lucide) lucide.createIcons();
+    });
   });
   $('#tocando-titulo').textContent = fila.length
     ? `${fila.length} faixas na fila`
@@ -425,9 +511,33 @@ function renderProgramacao(prog) {
       <button id="btn-aplicar" class="btn-primario w-full" ${ordem.length === 0 ? 'disabled title="Carregue o acervo do Drive primeiro"' : ''}>
         <i data-lucide="list-music" class="w-4 h-4"></i> Aplicar Programação ao Player
       </button>
+
+      <div class="flex gap-2 items-center">
+        <input id="prog-inicio" type="time" class="input text-sm" title="Horário de início automático">
+        <button id="btn-agendar" class="btn-secundario btn-ciano text-sm whitespace-nowrap" ${ordem.length === 0 ? 'disabled' : ''}>
+          <i data-lucide="alarm-clock" class="w-4 h-4"></i> Agendar início automático
+        </button>
+      </div>
     </article>`;
 
   if (window.lucide) lucide.createIcons();
+
+  const btnAgendar = $('#btn-agendar');
+  if (btnAgendar && !btnAgendar.disabled) {
+    btnAgendar.addEventListener('click', () => {
+      const inicio = $('#prog-inicio').value;
+      if (!inicio) return alert('Escolha o horário de início (Hora:Minuto).');
+      scheduler.agendarProgramacao({
+        nomeBloco: prog.nomeBloco,
+        grade: prog.grade,
+        locucao: prog.locucao,
+        ordem: ordem.filter((f) => f.origem !== 'sugestao'),
+        inicio,
+      });
+      renderizarProgramacoesSalvas();
+      mostrarFeedback(`✔ Programação agendada para tocar automaticamente às ${inicio}.`, 'cor-acento-texto');
+    });
+  }
 
   const btnAplicar = $('#btn-aplicar');
   if (btnAplicar && ordem.length) {
@@ -444,4 +554,75 @@ function renderProgramacao(prog) {
       document.querySelector('[data-tab="player"]')?.click();
     });
   }
+}
+
+// ============================================================
+// PLAYLISTS SALVAS (select + lista agendada)
+// ============================================================
+function atualizarSelectPlaylists(selecionar = '') {
+  const sel = $('#sel-playlist');
+  if (!sel) return;
+  const listas = playlists.getPlaylists();
+  sel.innerHTML = '<option value="">— Playlists salvas —</option>' +
+    listas.map((p) => `<option value="${p.id}">${p.nome} (${p.faixas.length})</option>`).join('');
+  if (selecionar) sel.value = listas.find((p) => p.nome === selecionar)?.id ?? '';
+}
+
+/** Lista as programações agendadas (grade horária) com botão de remover. */
+function renderizarProgramacoesSalvas() {
+  const cont = $('#programacoes-salvas');
+  if (!cont) return;
+  const lista = scheduler.getProgramacoes();
+  cont.innerHTML = lista.length === 0 ? '' : `
+    <div class="glass rounded-2xl p-4 space-y-2">
+      <h4 class="text-xs font-semibold text-zinc-400 uppercase flex items-center gap-1.5">
+        <i data-lucide="alarm-clock" class="w-3.5 h-3.5"></i> Programações agendadas
+      </h4>
+      ${lista.map((p) => `
+        <div class="flex items-center gap-2 text-sm">
+          <span class="font-mono cor-acento-texto font-bold">${p.inicio}</span>
+          <span class="flex-1 truncate">${p.nomeBloco ?? 'Programação'} · ${p.faixas?.length ?? 0} faixas</span>
+          <button data-rem-agend="${p.id}" class="text-zinc-500 hover:text-red-400 transition" title="Remover agendamento"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        </div>`).join('')}
+    </div>`;
+  cont.querySelectorAll('[data-rem-agend]').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      scheduler.removerProgramacao(btn.dataset.remAgend);
+      renderizarProgramacoesSalvas();
+    }));
+  if (window.lucide) lucide.createIcons();
+}
+
+// ============================================================
+// MODO OFFLINE — baixa a fila atual para o cache
+// ============================================================
+async function baixarFilaOffline() {
+  const fila = player.getFila().filter((f) => f.origem !== 'local');
+  if (!fila.length) return feedbackAviso('✖ Carregue a fila do Drive antes de baixar.');
+  const btn = $('#btn-baixar-tudo');
+  btn.disabled = true;
+  try {
+    let ok = 0;
+    for (let i = 0; i < fila.length; i++) {
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> ${i + 1}/${fila.length}`;
+      if (window.lucide) lucide.createIcons();
+      try {
+        await offline.baixarFaixa(fila[i], fila[i].url);
+        ok++;
+      } catch { /* continua com as próximas */ }
+    }
+    atualizarOfflineInfo();
+    feedbackAviso(`✔ ${ok} de ${fila.length} faixas salvas para ouvir offline.`);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="download" class="w-4 h-4"></i>';
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+async function atualizarOfflineInfo() {
+  const el = $('#offline-info');
+  if (!el || !('caches' in window)) return;
+  const { n, mb } = await offline.estatisticasOffline();
+  el.textContent = `${n} faixas offline${mb ? ` (~${mb} MB)` : ''}`;
 }

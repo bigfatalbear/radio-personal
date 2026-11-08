@@ -4,6 +4,9 @@
  * shuffle. Todos os eventos expostos via callbacks para renderização na UI.
  */
 import { urlStream } from './drive.js';
+import { resolverOffline } from './offline.js';
+import { ttsAtivo, anunciarFaixa, parar as pararTTS } from './tts.js';
+import { conectar as conectarFX, instalarAbafar } from './audiofx.js';
 
 const audio = new Audio();
 audio.preload = 'metadata';
@@ -78,8 +81,19 @@ export async function tocar(indice = null) {
   if (indice !== null) indiceAtual = indice;
   const faixa = getAtual();
   if (!faixa) return;
+  normalizarFaixa(faixa);
 
-  audio.src = faixa.url;
+  // 1) Cache offline primeiro (sem rede); 2) stream normal como fallback
+  let url = await resolverOffline(faixa);
+  if (!url) url = faixa.url;
+
+  if (!document.getElementById('audio-eq-conectado')) {
+    conectarFX(audio);              // equalizador (conecta na 1ª go — gesto já houve)
+    instalarAbafar(audio);
+    document.body.appendChild(Object.assign(document.createElement('span'), { id: 'audio-eq-conectado', hidden: '' }));
+  }
+
+  audio.src = url;
   audio.load();
   try {
     await audio.play();
@@ -123,13 +137,29 @@ audio.addEventListener('timeupdate', () => {
     frac: d ? audio.currentTime / d : 0,
   });
 });
-audio.addEventListener('ended', () => proxima());
+audio.addEventListener('ended', async () => {
+  // Locução TTS entre faixas: anuncia a próxima antes de tocá-la
+  const proximaFaixa = fila[indiceAtual + 1] ?? (fila.length ? fila[0] : null);
+  if (ttsAtivo() && proximaFaixa) {
+    callbacks.onStatus('pausado');
+    await anunciarFaixa(proximaFaixa, obterNomeRadio());
+    tocar(indiceAtual + 1 < fila.length ? indiceAtual + 1 : 0);
+    return;
+  }
+  proxima();
+});
 audio.addEventListener('play', () => callbacks.onStatus('tocando'));
 audio.addEventListener('pause', () => callbacks.onStatus('pausado'));
 audio.addEventListener('error', () => {
   // Arquivo do Drive indisponível (privado/CORS)? Pula para a próxima.
+  pararTTS();
   if (fila.length) proxima();
 });
+
+/** Nome da rádio injetado por app.js (usado na locução TTS). */
+let nomeRadio = 'Rádio Personal';
+export function setNomeRadio(n) { nomeRadio = n || nomeRadio; }
+function obterNomeRadio() { return nomeRadio; }
 
 /** Formata segundos em mm:ss */
 export function mmss(seg) {
