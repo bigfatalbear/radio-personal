@@ -44,7 +44,14 @@
     <aside class="app-sidebar">
       <div class="sidebar-brand">
         <div class="brand-mark" aria-hidden="true">
-          <i data-lucide="headphones"></i>
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 34v-4C10 16.7 19.8 7 32 7s22 9.7 22 23v4" stroke="url(#headphone-glow)" stroke-width="4" stroke-linecap="round"/>
+            <path d="M10 32a6 6 0 0 0-6 6v8a6 6 0 0 0 6 6h5V32h-5Zm44 0h-5v20h5a6 6 0 0 0 6-6v-8a6 6 0 0 0-6-6Z" fill="#18225b" stroke="#16cfff" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M21 44V32l17 12V32l10 7-10 7V34L21 46v-2Z" fill="#27d9ff"/>
+            <defs>
+              <linearGradient id="headphone-glow" x1="7" y1="8" x2="55" y2="39" gradientUnits="userSpaceOnUse"><stop stop-color="#00E5FF"/><stop offset=".55" stop-color="#3185FF"/><stop offset="1" stop-color="#B218FF"/></linearGradient>
+            </defs>
+          </svg>
           <img id="hdr-logo" src="" alt="" class="hidden">
         </div>
         <h1 id="hdr-nome">Rádio Personal</h1>
@@ -54,7 +61,7 @@
       <nav class="sidebar-nav" aria-label="Navegação principal">
         <button data-tab="player" class="sidebar-link"><i data-lucide="house"></i><span>Início</span></button>
         <button type="button" data-scroll-to="lista-fila" class="sidebar-link"><i data-lucide="audio-lines"></i><span>Player</span></button>
-        <button data-tab="programacao" class="sidebar-link"><i data-lucide="sparkles"></i><span>Programação IA</span></button>
+        <button data-tab="programacao" class="sidebar-link"><i data-lucide="calendar-days"></i><span>Programação IA</span></button>
         <button data-tab="config" class="sidebar-link"><i data-lucide="settings-2"></i><span>Configurações</span></button>
         <button data-tab="ajuda" class="sidebar-link"><i data-lucide="circle-help"></i><span>Ajuda</span></button>
       </nav>
@@ -82,9 +89,8 @@
           </button>
         </div>
         <div class="hero-copy">
-          <p class="hero-eyebrow"><span></span> SUA ESTAÇÃO, DO SEU JEITO</p>
           <h2>Bem-vindo à sua rádio!</h2>
-          <p>Para começar, envie uma imagem em Configurações, adicione sua chave de IA e informe a pasta do Drive.</p>
+          <p>Para começar, envie uma imagem em Configurações (gera o seu tema), cole a chave da IA e informe a pasta do Drive.<br><a data-ir-ajuda class="hero-help-link">→ passo a passo completo está na aba Ajuda</a>.</p>
           <div class="hero-shortcuts" role="tablist" aria-label="Acesso rápido">
             <button data-tab="player" class="tab-btn t-ciano" role="tab"><i data-lucide="radio" class="w-4 h-4"></i> Player</button>
             <button data-tab="programacao" class="tab-btn t-roxo" role="tab"><i data-lucide="sparkles" class="w-4 h-4"></i> Programação IA</button>
@@ -94,8 +100,36 @@
         </div>
         <div class="hero-art" aria-hidden="true">
           <div class="hero-glow"></div>
-          <i data-lucide="mic-2" class="hero-mic"></i>
-          <div class="hero-wave"></div>
+          <svg class="hero-mic" viewBox="0 0 180 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="mic-shell" x1="47" y1="12" x2="133" y2="155" gradientUnits="userSpaceOnUse"><stop stop-color="#1B2230"/><stop offset=".22" stop-color="#697180"/><stop offset=".43" stop-color="#111723"/><stop offset=".72" stop-color="#303747"/><stop offset="1" stop-color="#090D17"/></linearGradient>
+              <linearGradient id="mic-grille" x1="54" y1="18" x2="119" y2="111" gradientUnits="userSpaceOnUse"><stop stop-color="#F6D6A7"/><stop offset=".24" stop-color="#946849"/><stop offset=".48" stop-color="#D9B184"/><stop offset=".74" stop-color="#674C3D"/><stop offset="1" stop-color="#C89D73"/></linearGradient>
+              <linearGradient id="mic-yoke" x1="28" y1="104" x2="146" y2="199" gradientUnits="userSpaceOnUse"><stop stop-color="#A8B9D2"/><stop offset=".4" stop-color="#283349"/><stop offset=".7" stop-color="#75839A"/><stop offset="1" stop-color="#171D2C"/></linearGradient>
+              <pattern id="mic-mesh" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(32)"><path d="M0 0h7M0 3.5h7" stroke="#F3D0A1" stroke-opacity=".62" stroke-width="1"/><path d="M1 0v7M4.5 0v7" stroke="#211B1B" stroke-opacity=".62" stroke-width="1"/></pattern>
+              <clipPath id="mic-grille-clip"><rect x="53" y="17" width="66" height="94" rx="31"/></clipPath>
+            </defs>
+            <g transform="rotate(-11 90 125)">
+              <path d="M37 94v43a54 54 0 0 0 108 0V94" stroke="url(#mic-yoke)" stroke-width="9" stroke-linecap="round"/>
+              <path d="M91 191v28m-25 8h50" stroke="url(#mic-yoke)" stroke-width="9" stroke-linecap="round"/>
+              <rect x="49" y="10" width="74" height="148" rx="37" fill="url(#mic-shell)" stroke="#94A4B7" stroke-width="2"/>
+              <rect x="53" y="17" width="66" height="94" rx="31" fill="url(#mic-grille)"/>
+              <rect x="53" y="17" width="66" height="94" rx="31" fill="url(#mic-mesh)" clip-path="url(#mic-grille-clip)"/>
+              <path d="M55 108h62M52 119h68m-67 8h66" stroke="#CED7E2" stroke-opacity=".62" stroke-width="2"/>
+              <path d="M61 140h50M69 149h34" stroke="#0A0E17" stroke-opacity=".82" stroke-width="3" stroke-linecap="round"/>
+              <path d="M37 105h14m72 0h14" stroke="#D3DFEC" stroke-width="4" stroke-linecap="round"/>
+            </g>
+          </svg>
+          <svg class="hero-wave" viewBox="0 0 640 72" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="wave-color"><stop stop-color="#08D5FF"/><stop offset=".52" stop-color="#176FFF"/><stop offset="1" stop-color="#B514FF"/></linearGradient></defs>
+            <g fill="url(#wave-color)">
+              <rect x="0" y="32" width="6" height="8" rx="3"/><rect x="12" y="27" width="6" height="18" rx="3"/><rect x="24" y="18" width="6" height="36" rx="3"/><rect x="36" y="30" width="6" height="12" rx="3"/><rect x="48" y="7" width="6" height="58" rx="3"/><rect x="60" y="22" width="6" height="30" rx="3"/><rect x="72" y="29" width="6" height="15" rx="3"/><rect x="84" y="12" width="6" height="48" rx="3"/><rect x="96" y="27" width="6" height="20" rx="3"/><rect x="108" y="20" width="6" height="34" rx="3"/>
+              <rect x="120" y="30" width="6" height="12" rx="3"/><rect x="132" y="4" width="6" height="64" rx="3"/><rect x="144" y="19" width="6" height="38" rx="3"/><rect x="156" y="28" width="6" height="17" rx="3"/><rect x="168" y="14" width="6" height="46" rx="3"/><rect x="180" y="23" width="6" height="28" rx="3"/><rect x="192" y="31" width="6" height="10" rx="3"/><rect x="204" y="11" width="6" height="50" rx="3"/><rect x="216" y="20" width="6" height="36" rx="3"/><rect x="228" y="26" width="6" height="22" rx="3"/>
+              <rect x="240" y="2" width="6" height="68" rx="3"/><rect x="252" y="18" width="6" height="40" rx="3"/><rect x="264" y="29" width="6" height="14" rx="3"/><rect x="276" y="13" width="6" height="46" rx="3"/><rect x="288" y="22" width="6" height="28" rx="3"/><rect x="300" y="30" width="6" height="12" rx="3"/><rect x="312" y="9" width="6" height="54" rx="3"/><rect x="324" y="19" width="6" height="35" rx="3"/><rect x="336" y="27" width="6" height="19" rx="3"/><rect x="348" y="4" width="6" height="64" rx="3"/>
+              <rect x="360" y="23" width="6" height="27" rx="3"/><rect x="372" y="30" width="6" height="12" rx="3"/><rect x="384" y="14" width="6" height="44" rx="3"/><rect x="396" y="19" width="6" height="36" rx="3"/><rect x="408" y="28" width="6" height="17" rx="3"/><rect x="420" y="6" width="6" height="60" rx="3"/><rect x="432" y="22" width="6" height="30" rx="3"/><rect x="444" y="30" width="6" height="12" rx="3"/><rect x="456" y="15" width="6" height="42" rx="3"/><rect x="468" y="25" width="6" height="22" rx="3"/>
+              <rect x="480" y="9" width="6" height="54" rx="3"/><rect x="492" y="20" width="6" height="34" rx="3"/><rect x="504" y="29" width="6" height="15" rx="3"/><rect x="516" y="4" width="6" height="64" rx="3"/><rect x="528" y="23" width="6" height="26" rx="3"/><rect x="540" y="30" width="6" height="12" rx="3"/><rect x="552" y="16" width="6" height="40" rx="3"/><rect x="564" y="27" width="6" height="18" rx="3"/><rect x="576" y="6" width="6" height="60" rx="3"/><rect x="588" y="21" width="6" height="32" rx="3"/>
+              <rect x="600" y="29" width="6" height="14" rx="3"/><rect x="612" y="12" width="6" height="48" rx="3"/><rect x="624" y="23" width="6" height="26" rx="3"/><rect x="636" y="31" width="4" height="10" rx="2"/>
+            </g>
+          </svg>
         </div>
       </header>
 
@@ -107,11 +141,12 @@
     <section data-page="player">
       <!-- Aviso de primeira visita (some após clicar em "Entendi" ou configurar tudo) -->
       <div id="onboarding" class="onboarding mb-4">
-        <i data-lucide="graduation-cap"></i>
+        <i data-lucide="circle-check-big"></i>
         <div class="flex-1">
           <p class="font-semibold text-zinc-100">Bem-vindo à sua rádio!</p>
-          <p class="text-zinc-400 mt-0.5">Para começar: ① envie uma imagem em Configurações (gera o seu tema), ② cole a chave da IA, ③ informe a pasta do Drive — o <a data-ir-ajuda>passo a passo completo está na aba Ajuda</a>.</p>
+          <p class="text-zinc-400 mt-0.5">Para começar: envie uma imagem em Configurações, cole a chave da IA e informe a pasta do Drive.</p>
         </div>
+        <button type="button" data-ir-ajuda class="onboarding-guide"><i data-lucide="folder"></i><span>Passo a passo completo</span><i data-lucide="chevron-right"></i></button>
         <button id="btn-onboarding-fechar" class="text-zinc-500 hover:text-zinc-300 text-lg leading-none" aria-label="Fechar">×</button>
       </div>
       <div class="flex items-center justify-between mb-4">
@@ -575,7 +610,7 @@
         <!-- Visualizador de onda + capa + título -->
         <div class="flex items-center gap-2.5 min-w-0 flex-1">
           <div class="ondalink" aria-hidden="true">
-            <span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
           </div>
           <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 overflow-hidden backdrop-blur">
             <i data-lucide="music-2" id="capa-icone" class="w-5 h-5 text-zinc-400"></i>

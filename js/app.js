@@ -353,7 +353,16 @@ async function aoTestarIA() {
 
 function aplicarIdentidade() {
   const { rádio } = getConfig();
-  $('#hdr-nome').textContent = rádio.nome || 'Rádio Personal';
+  const nome = (rádio.nome || 'Rádio Personal').trim().split(/\s+/);
+  const titulo = $('#hdr-nome');
+  titulo.replaceChildren(document.createTextNode(nome.shift() || ''));
+  if (nome.length) {
+    titulo.append(document.createTextNode(' '));
+    const destaque = document.createElement('span');
+    destaque.className = 'brand-accent';
+    destaque.textContent = nome.join(' ');
+    titulo.append(destaque);
+  }
   $('#hdr-slogan').textContent = rádio.slogan || '';
   const logo = $('#hdr-logo');
   if (rádio.logo) {

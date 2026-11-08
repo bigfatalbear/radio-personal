@@ -8,7 +8,7 @@ PWA de streaming de áudio a partir de uma pasta pública do **Google Drive**, c
 
 | Módulo | Descrição |
 |---|---|
-| 🎵 Player | Play/pause, próxima/anterior, barra de progresso clicável, volume, shuffle e tela cheia |
+| 🎵 Player | Play/pause, próxima/anterior, barra de progresso clicável, volume, shuffle, tela cheia e visualizador neon que reage ao áudio quando permitido pelo navegador/origem |
 | 📁 Google Drive | Leitura de pastas públicas (`.mp3`, `.m4a`, `.aac`, etc.) via Drive API v3 |
 | 🤖 Programação IA | Prompt estruturado que gera nome do bloco, grade horária, locução e ordem de reprodução usando o acervo real do Drive |
 | ⚙️ Configurações | Chave de IA, link da pasta, nome/slogan/logo (persistidos em `localStorage`) |
