@@ -114,12 +114,11 @@ function vincularLinksChave() {
 function configurarTabs() {
   $$('[data-tab]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      $$('[data-tab]').forEach((b) => b.classList.toggle('ativo', b === btn));
+      $$('[data-tab]').forEach((b) => b.classList.toggle('ativo', b.dataset.tab === btn.dataset.tab));
       $$('[data-page]').forEach((p) => p.classList.toggle('hidden', p.dataset.page !== btn.dataset.tab));
     });
   });
-  const primeiraTab = document.querySelector('[data-tab="player"]');
-  if (primeiraTab) primeiraTab.classList.add('ativo');
+  $$('[data-tab="player"]').forEach((btn) => btn.classList.add('ativo'));
   $$('[data-ir-config]').forEach((el) => el.addEventListener('click', () =>
     document.querySelector('[data-tab="config"]')?.click()));
 }

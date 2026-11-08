@@ -40,37 +40,65 @@
     <div class="blob blob-verde"></div>
   </div>
 
-  <!-- ============================================================
-       HEADER — Identidade da Rádio (vidro translúcido)
-       ============================================================ -->
-  <header class="sticky top-0 z-40 glass rounded-b-2xl border-b border-white/10">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center gap-2 sm:gap-3">
-      <img id="hdr-logo" src="" alt="" class="w-10 h-10 rounded-xl object-cover hidden shadow-lg shadow-cyan-500/20">
-      <div class="flex-1 min-w-0 shrink-0 basis-40 sm:basis-auto">
-        <h1 id="hdr-nome" class="font-extrabold text-lg leading-tight truncate text-white drop-shadow">Rádio Personal</h1>
-        <p id="hdr-slogan" class="text-xs text-zinc-400 truncate">Sua rádio, seu estilo</p>
+  <div class="app-shell">
+    <aside class="app-sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark" aria-hidden="true">
+          <i data-lucide="headphones"></i>
+          <img id="hdr-logo" src="" alt="" class="hidden">
+        </div>
+        <h1 id="hdr-nome">Rádio Personal</h1>
+        <p id="hdr-slogan">Sua rádio, seu estilo</p>
       </div>
-      <div id="selo-drive" class="hidden md:flex items-center gap-1.5 text-xs text-zinc-300 bg-white/5 border border-white/10 rounded-full px-3 py-1 backdrop-blur shrink-0">
-        <i data-lucide="hard-drive" class="w-3.5 h-3.5"></i> <span id="selo-drive-txt">Drive não configurado</span>
-      </div>
-      <div id="badge-ao-vivo" class="hidden items-center gap-1.5 text-xs font-bold text-white bg-emerald-500/15 border border-emerald-400/40 rounded-full px-3 py-1 backdrop-blur shrink-0" style="box-shadow:0 0 16px -2px var(--rp-acento-suave)">
-        <span class="w-2 h-2 rounded-full cor-acento-fun animate-pulse"></span> AO VIVO
-      </div>
-      <!-- Ajude o desenvolvedor ♥ -->
-      <button id="btn-ajude-desenvolvedor" class="flex items-center gap-2 text-sm font-bold text-white bg-pink-600/80 border border-pink-300/60 rounded-full px-4 py-2 hover:bg-pink-600 active:scale-95 transition backdrop-blur shrink-0 cursor-pointer" style="box-shadow:0 0 18px -4px rgba(236,72,153,.6)" title="Ajude o desenvolvedor via PIX ♥">
-        <i data-lucide="heart-handshake" class="w-5 h-5"></i> <span>Ajude o dev</span>
-      </button>
-    </div>
-      <!-- Navegação por abas (pílulas de vidro coloridas) -->
-    <nav class="max-w-5xl mx-auto px-4 pb-3 flex gap-2 overflow-x-auto" role="tablist" aria-label="Navegação principal">
-      <button data-tab="player" class="tab-btn t-ciano" role="tab"><i data-lucide="radio" class="w-4 h-4"></i> Player</button>
-      <button data-tab="programacao" class="tab-btn t-roxo" role="tab"><i data-lucide="sparkles" class="w-4 h-4"></i> Programação IA</button>
-      <button data-tab="config" class="tab-btn t-neutro" role="tab"><i data-lucide="settings-2" class="w-4 h-4"></i> Configurações</button>
-      <button data-tab="ajuda" class="tab-btn t-neutro" role="tab"><i data-lucide="circle-help" class="w-4 h-4"></i> Ajuda</button>
-    </nav>
-  </header>
 
-  <main class="max-w-5xl mx-auto px-4 py-6">
+      <nav class="sidebar-nav" role="tablist" aria-label="Navegação principal">
+        <button data-tab="player" class="sidebar-link" role="tab"><i data-lucide="house"></i><span>Início</span></button>
+        <button data-tab="programacao" class="sidebar-link" role="tab"><i data-lucide="sparkles"></i><span>Programação IA</span></button>
+        <button data-tab="config" class="sidebar-link" role="tab"><i data-lucide="settings-2"></i><span>Configurações</span></button>
+        <button data-tab="ajuda" class="sidebar-link" role="tab"><i data-lucide="circle-help"></i><span>Ajuda</span></button>
+      </nav>
+
+      <div class="sidebar-promo">
+        <div class="promo-wave" aria-hidden="true"><i data-lucide="audio-lines"></i></div>
+        <strong>Curta sua música favorita!</strong>
+        <span>Personalize sua rádio de forma simples.</span>
+      </div>
+    </aside>
+
+    <div class="app-main">
+      <header class="hero">
+        <div class="hero-actions">
+          <div class="hero-status">
+            <div id="selo-drive" class="drive-status">
+              <i data-lucide="hard-drive"></i><span id="selo-drive-txt">Drive não configurado</span>
+            </div>
+            <div id="badge-ao-vivo" class="live-status hidden">
+              <span class="live-dot cor-acento-fun"></span> AO VIVO
+            </div>
+          </div>
+          <button id="btn-ajude-desenvolvedor" class="support-button" title="Ajude o desenvolvedor via PIX ♥">
+            <i data-lucide="heart-handshake"></i><span>Ajude o dev</span>
+          </button>
+        </div>
+        <div class="hero-copy">
+          <p class="hero-eyebrow"><span></span> SUA ESTAÇÃO, DO SEU JEITO</p>
+          <h2>Bem-vindo à sua rádio!</h2>
+          <p>Para começar, envie uma imagem em Configurações, adicione sua chave de IA e informe a pasta do Drive.</p>
+          <div class="hero-shortcuts" role="tablist" aria-label="Acesso rápido">
+            <button data-tab="player" class="tab-btn t-ciano" role="tab"><i data-lucide="radio" class="w-4 h-4"></i> Player</button>
+            <button data-tab="programacao" class="tab-btn t-roxo" role="tab"><i data-lucide="sparkles" class="w-4 h-4"></i> Programação IA</button>
+            <button data-tab="config" class="tab-btn t-neutro" role="tab"><i data-lucide="settings-2" class="w-4 h-4"></i> Configurações</button>
+            <button data-tab="ajuda" class="tab-btn t-neutro" role="tab"><i data-lucide="circle-help" class="w-4 h-4"></i> Ajuda</button>
+          </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="hero-glow"></div>
+          <i data-lucide="mic-2" class="hero-mic"></i>
+          <div class="hero-wave"></div>
+        </div>
+      </header>
+
+      <main class="app-content">
 
     <!-- ============================================================
          ABA 1 — PLAYER / FILA DE EXECUÇÃO
@@ -473,7 +501,9 @@
       </form>
     </section>
 
-  </main>
+      </main>
+    </div>
+  </div>
 
   <!-- Mini player do YouTube (iframe oficial — clicável para expandir/esconder) -->
   <div id="yt-mini" class="fixed right-4 z-[60] hidden" style="bottom: 92px;">
