@@ -143,6 +143,11 @@ export function anterior() {
 
 export function setVolume(v) { audio.volume = Math.min(1, Math.max(0, v / 100)); }
 
+/** Está tocando agora (áudio não pausado e com fonte)? */
+export function estaTocando() {
+  return Boolean(audio.src) && !audio.paused && !audio.ended;
+}
+
 export function seek(fraction) {
   if (audio.duration && isFinite(audio.duration)) audio.currentTime = fraction * audio.duration;
 }

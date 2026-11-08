@@ -19,6 +19,7 @@ export const CONFIG_PADRAO = {
   tts: { ativo: false, voz: '', velocidade: 1, estilo: 'padrao' }, // locução automática
   eq: { bass: 0, mid: 0, treble: 0, visualizador: true },          // equalizador
   programacoes: [],           // grade horária automática (scheduler.js)
+  wakelock: { ativo: true, avisos: { bateria: false, chrome: false } }, // modo rádio (tela acordada)
 };
 
 let cache = null;

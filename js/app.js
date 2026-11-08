@@ -12,6 +12,7 @@ import * as offline from './offline.js';
 import * as scheduler from './scheduler.js';
 import { setEq, iniciarVisualizador, aplicarValores as eqAplicar } from './audiofx.js';
 import { listarVozes } from './tts.js';
+import * as wakelock from './wakelock.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -53,9 +54,15 @@ function atualizarUIExtra() {
   $('#cfg-tts-vel-valor').textContent = `${(Number(cfg.tts?.velocidade) || 1).toFixed(1)}×`;
   $('#eq-bass').value = cfg.eq?.bass ?? 0;
   $('#eq-mid').value = cfg.eq?.mid ?? 0;
-  $('#eq-treble').value = cfg.eq?.treble ?? 0;
-  atualizarOfflineInfo();
+  $('#eq-treble').value = cfg.eq?.treble ?? 0;  atualizarOfflineInfo();
   iniciarVisualizador();
+  // ==== Wake Lock (Modo Rádio) ====
+  $('#cfg-wakelock').checked = Boolean(cfg.wakelock?.ativo);
+  $('#cfg-aviso-bateria').checked = Boolean(cfg.wakelock?.avisos?.bateria);
+  $('#cfg-aviso-chrome').checked = Boolean(cfg.wakelock?.avisos?.chrome);
+  if (!$('#cfg-wakelock').disabled) $('#cfg-wakelock').disabled = !wakelock.suportado();
+  atualizarWakelockStatus('inativo');
+  wakelock.instalarVigilancia(player.estaTocando);
 }
 
 // ============================================================
@@ -135,6 +142,16 @@ function vincularEventos() {
     $('#cfg-tts-vel-valor').textContent = `${v.toFixed(1)}×`;
     salvarConfig({ tts: { velocidade: v } });
   });
+  // ===== Modo Rádio (Wake Lock) + ajustes do dispositivo =====
+  $('#cfg-wakelock')?.addEventListener('change', async (e) => {
+    if (e.target.disabled) return e.preventDefault();
+    await wakelock.alternarPreferencia(e.target.checked);
+    atualizarWakelockStatus(e.target.checked ? 'aguardando' : 'inativo');
+  });
+  $('#cfg-aviso-bateria')?.addEventListener('change', (e) =>
+    salvarConfig({ wakelock: { avisos: { bateria: e.target.checked } } }));
+  $('#cfg-aviso-chrome')?.addEventListener('change', (e) =>
+    salvarConfig({ wakelock: { avisos: { chrome: e.target.checked } } }));
 
   // Some o onboarding se o usuário já viu ou já configurou a IA
   if (localStorage.getItem('radioPersonal:onboarding') || getConfig().apiKey) {
@@ -408,6 +425,12 @@ function renderStatus(status) {
   const iconePa = $('#icone-play');
   const badge = $('#badge-ao-vivo');
 
+  // Wake Lock acompanha a reprodução (Modo Rádio)
+  wakelock.aplicarPeloEstado(status).then(() => {
+    if (status === 'tocando') atualizarWakelockStatus(wakelock.estaAtivo() ? 'ativo' : 'aguardando');
+    else atualizarWakelockStatus('inativo');
+  });
+
   // Troca o ícone play/pause
   const usarPause = status === 'tocando';
   iconePa.outerHTML = `<i data-lucide="${usarPause ? 'pause' : 'play'}" id="icone-play" class="w-5 h-5 fill-current"></i>`;
@@ -628,4 +651,33 @@ async function atualizarOfflineInfo() {
   if (!el || !('caches' in window)) return;
   const { n, mb } = await offline.estatisticasOffline();
   el.textContent = `${n} faixas offline${mb ? ` (~${mb} MB)` : ''}`;
+}
+
+// ============================================================
+// MODO RÁDIO (WAKE LOCK) — indicador de estado
+// ============================================================
+let wakelockStatusTimer = null;
+function atualizarWakelockStatus(estado) {
+  const el = $('#wakelock-status');
+  if (!el) return;
+  const mapa = {
+    ativo: { txt: 'Modo Rádio ativo — tela acordada', cls: 'text-emerald-400', icone: 'lock' },
+    aguardando: { txt: 'Aguardando a próxima música para travar a tela', cls: 'text-amber-400', icone: 'moon' },
+    inativo: { txt: 'Wake lock inativo (pausado)', cls: 'text-zinc-500', icone: 'circle' },
+  };
+  const m = mapa[estado] ?? mapa.inativo;
+  el.className = `text-xs flex items-center gap-1.5 ${m.cls}`;
+  clearTimeout(wakelockStatusTimer);
+  const mudar = (e2) => {
+    const n = mapa[e2] ?? mapa.inativo;
+    el.innerHTML = `<i data-lucide="${n.icone}" class="w-3 h-3"></i> ${n.txt}`;
+    el.className = `text-xs flex items-center gap-1.5 ${n.cls}`;
+    if (window.lucide) lucide.createIcons();
+  };
+  mudar(estado);
+  if (estado === 'aguardando') {
+    wakelockStatusTimer = setTimeout(() => {
+      atualizarWakelockStatus(wakelock.estaAtivo() ? 'ativo' : 'inativo');
+    }, 8000);
+  }
 }

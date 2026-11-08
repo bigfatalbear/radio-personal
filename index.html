@@ -352,7 +352,39 @@
           </div>
         </fieldset>
 
-        <!-- 4. Google Drive -->
+        <!-- 4. Segundo plano: tela desligada & modo rádio -->
+        <fieldset class="glass rounded-2xl p-4 space-y-3">
+          <legend class="fieldset-legend-cyan">Tela desligada & Segundo plano</legend>
+
+          <label class="flex items-center gap-2 text-sm font-medium">
+            <input id="cfg-wakelock" type="checkbox" class="w-4 h-4 accent-cyan-500">
+            <i data-lucide="moon-star" class="w-4 h-4 text-zinc-400"></i>
+            Modo Rádio — manter a tela acordada enquanto toca
+            <span class="text-xs text-zinc-500">(garante os agendamentos na hora certa)</span>
+          </label>
+
+          <p class="text-xs text-zinc-500 flex items-start gap-1.5">
+            <i data-lucide="info" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
+            <span>Para a rádio continuar tocando com a <strong>tela desligada</strong> sem depender do Modo Rádio, configure o sistema uma única vez:</span>
+          </p>
+
+          <ul class="text-xs text-zinc-400 space-y-2">
+            <li class="flex items-start gap-2">
+              <input id="cfg-aviso-bateria" type="checkbox" class="w-4 h-4 mt-0.5 accent-emerald-500 shrink-0">
+              <span><strong class="text-zinc-200">Bateria:</strong> Configurações do Android → Aplicativos → Chrome → Bateria → escolha <em>"Sem restrições"</em> (evita o sistema dormir o navegador).</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <input id="cfg-aviso-chrome" type="checkbox" class="w-4 h-4 mt-0.5 accent-emerald-500 shrink-0">
+              <span><strong class="text-zinc-200">Instalar como app:</strong> menu ⋮ do Chrome no site da rádio → <em>"Adicionar à tela inicial"</em> → Instalar. Apps PWA instalados ganham prioridade de segundo plano no Android (essencial para o agendamento). <button data-ir-ajuda class="underline font-semibold">Ver passo a passo</button></span>
+            </li>
+          </ul>
+
+          <div class="flex gap-2">
+            <span id="wakelock-status" class="text-xs text-zinc-500 flex items-center gap-1.5"><i data-lucide="circle" class="w-3 h-3"></i> Wake lock inativo</span>
+          </div>
+        </fieldset>
+
+        <!-- 5. Google Drive -->
         <fieldset class="glass rounded-2xl p-4 space-y-3">
           <legend class="fieldset-legend-cyan">Fonte de Músicas (Google Drive)</legend>
           <label class="text-sm flex flex-col">Link da pasta pública ou ID
