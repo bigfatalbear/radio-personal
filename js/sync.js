@@ -99,7 +99,7 @@ async function obterToken() {
 async function localizarArquivo(token, pastaId) {
   const q = `name='${NOME_ARQUIVO}' and '${pastaId}' in parents and trashed=false`;
   const r = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)&key=${getConfig().driveApiKey || getConfig().apiKey}`,
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)&key=${encodeURIComponent((getConfig().driveApiKey || getConfig().apiKey || '').trim())}`,
     { headers: { Authorization: `Bearer ${token}` } });
   if (!r.ok) throw new Error(`Erro ao buscar playlists no Drive (${r.status}).`);
   return (await r.json()).files?.[0]?.id ?? null;
@@ -197,7 +197,7 @@ export async function enviarArquivo(arquivo, nome, mimeType) {
 export async function restaurarPublico() {
   const cfg = getConfig();
   const pastaId = extrairDriveId(cfg.driveFonte);
-  const key = (cfg.driveApiKey || cfg.apiKey || '').trim();
+  const key = encodeURIComponent((cfg.driveApiKey || cfg.apiKey || '').trim());
   if (!pastaId || !key) return null;
   const q = `name='${NOME_ARQUIVO}' and '${pastaId}' in parents and trashed=false`;
   const r = await fetch(
