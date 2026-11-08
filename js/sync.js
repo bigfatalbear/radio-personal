@@ -98,3 +98,25 @@ export async function restaurarDoDrive() {
   if (!r.ok) throw new Error(`Falha ao ler playlists do Drive (${r.status}).`);
   return r.json();
 }
+
+// ============================================================
+// MODO OUVINTE — leitura automática SEM login (API key)
+// O arquivo vive em pasta compartilhada "com o link", então qualquer
+// pessoa pode ler via API key. Usado no boot: quem administrar salvou
+// lá uma vez, todos recebem as playlists automaticamente.
+// ============================================================
+export async function restaurarPublico() {
+  const cfg = getConfig();
+  const pastaId = extrairDriveId(cfg.driveFonte);
+  const key = (cfg.driveApiKey || cfg.apiKey || '').trim();
+  if (!pastaId || !key) return null;
+  const q = `name='${NOME_ARQUIVO}' and '${pastaId}' in parents and trashed=false`;
+  const r = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)&key=${key}`);
+  if (!r.ok) return null; // silencioso: modo ouvinte nunca atrapalha
+  const id = (await r.json()).files?.[0]?.id;
+  if (!id) return null;
+  const r2 = await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media&key=${key}`);
+  if (!r2.ok) return null;
+  return r2.json();
+}

@@ -70,6 +70,21 @@ function atualizarUIExtra() {
   vincularLinksChave();
   vincularPix();
   vincularGerenciarPlaylists();
+  autoCarregarPlaylistsDoDrive();
+}
+
+/** Modo ouvinte: importar playlists publicadas em pasta compartilhada sem login. */
+async function autoCarregarPlaylistsDoDrive() {
+  try {
+    if (playlists.getPlaylists().length > 0) return; // quem gerencia localmente não é sobrescrito
+    const json = await sync.restaurarPublico();
+    if (json?.playlists?.length) {
+      playlists.importarDoDrive(json.playlists, json.favoritos);
+      atualizarSelectPlaylists();
+      renderFila();
+      feedbackAviso(`✔ ${json.playlists.length} playlist(s) recebidas do Drive.`);
+    }
+  } catch { /* silencioso */ }
 }
 
 /** Botões de link para gerar chaves + destaque no provedor ativo. */
