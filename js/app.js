@@ -298,7 +298,6 @@ function preencherFormConfig() {
   $('#cfg-provedor').value = cfg.provedor || 'gemini';
   $('#cfg-apikey').value = cfg.apiKey || '';
   $('#cfg-ytkey').value = cfg.youtubeApiKey || '';
-  $('#cfg-oauthcid').value = cfg.oauthClientId || '';
   $('#cfg-drive').value = cfg.driveFonte || '';
 }
 
@@ -309,7 +308,6 @@ function aoSalvarConfig(e) {
     provedor: $('#cfg-provedor').value,
     apiKey: $('#cfg-apikey').value.trim(),
     youtubeApiKey: $('#cfg-ytkey').value.trim(),
-    oauthClientId: $('#cfg-oauthcid').value.trim(),
     driveFonte: $('#cfg-drive').value.trim(),
     rádio: {
       nome: $('#cfg-nome').value.trim() || 'Rádio Personal',

@@ -1,10 +1,19 @@
 /**
- * sync.js — Sincronização de playlists com a pasta do Google Drive (configurada).
- * Escrever no Drive exige OAuth (API key só lê). Usamos Google Identity Services
- * (token client) + escopo `drive.file`: nada além dos arquivos criados por aqui.
- * As playlists vão num JSON `radio-personal-playlists.json` dentro da sua pasta.
+ * sync.js — Sincronização de playlists com o Google Drive (OAuth).
+ *
+ * O OAuth Client ID é configuração de DESENVOLVIMENTO: fica FIXO no código
+ * (CLIENT_ID_FIXO abaixo) — o usuário final nunca vê, apenas faz login com
+ * a PROPRIA conta Google no pop-up do Google Identity Services.
+ * As playlists de cada usuário ficam no Drive dele mesmo (escopo drive.file).
  */
 import { getConfig, extrairDriveId } from './settings.js';
+
+// ============================================================
+// ★★★ CONFIGURAÇÃO DO DEV — cole aqui o seu OAuth Client ID ★★★
+// (console.cloud.google.com/apis/credentials → "Aplicativo da Web",
+//  origem autorizada: https://bigfatalbear.github.io)
+const CLIENT_ID_FIXO = ''; // ex.: '1234567890-abc.apps.googleusercontent.com'
+// ============================================================
 
 const ESCOPO = 'https://www.googleapis.com/auth/drive.file';
 const NOME_ARQUIVO = 'radio-personal-playlists.json';
@@ -13,8 +22,13 @@ const CLIENTE = 'https://accounts.google.com/gsi/client';
 let tokenAcesso = null;
 let expira = 0;
 
-/** Client ID OAuth configurado? (Configurações → campo "OAuth Client ID") */
-export function configurado() { return Boolean(getConfig().oauthClientId?.trim()); }
+/** Client ID ativo: fixo no código (dev) — o usuário final nunca informa. */
+export function clientIdAtivo() {
+  return (getConfig().oauthClientId || CLIENT_ID_FIXO).trim();
+}
+
+/** Client ID do OAuth configurado? (campo escondido mantido por compatibilidade) */
+export function configurado() { return Boolean(clientIdAtivo()); }
 
 function carregarGSI() {
   if (window.google?.accounts?.oauth2) return Promise.resolve(window.google.accounts.oauth2);
@@ -33,8 +47,11 @@ function carregarGSI() {
 /** Fluxo de login → token (renova se expirado). */
 async function obterToken() {
   if (tokenAcesso && Date.now() < expira - 30_000) return tokenAcesso;
-  const cid = getConfig().oauthClientId?.trim();
-  if (!cid) throw new Error('Configure o "OAuth Client ID" em Configurações para salvar no Drive.');
+  const cid = clientIdAtivo();
+  if (!cid) {
+    throw new Error('Login Google indisponível nesta build (Client ID do dev não embutido). ' +
+      'Suas playlists continuam funcionando salvas neste navegador.');
+  }
   const oauth = await carregarGSI();
   return new Promise((resolve, reject) => {
     const cliente = oauth.initTokenClient({
