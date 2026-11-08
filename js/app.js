@@ -903,41 +903,38 @@ const PIX_CHAVE =
 
 function vincularPix() {
   const modal = $('#pix-modal');
-  $('#btn-ajude-desenvolvedor')?.addEventListener('click', abrirModalPix);
-  $('#pix-fechar')?.addEventListener('click', () => modal.classList.add('hidden'));
-  modal?.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+  if (!modal) return;
 
-  $('#btn-copiar-pix')?.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(PIX_CHAVE);
-      const ok = $('#pix-copiado');
-      ok.classList.remove('opacity-0');
-      setTimeout(() => ok.classList.add('opacity-0'), 4000);
-    } catch {
-      // Clipboard API bloqueado: seleção manual num prompt de fallback
-      prompt('Copie o código PIX (Ctrl+C / selecionar):', PIX_CHAVE);
+  // Abre/fecha SEM sobrescrever classes: display:grid centraliza sempre
+  const abrir = () => {
+    modal.style.display = 'grid';
+    $('#pix-copiado').classList.add('opacity-0');
+    $('#pix-copiado').textContent = '✔ Código PIX copiado! Cole no seu app de banco.';
+    $('#pix-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?margin=8&size=192x192&data=' + encodeURIComponent(PIX_CHAVE);
+  };
+  const fechar = () => { modal.style.display = 'none'; };
+
+  // Delegação global — funciona mesmo que o botão venha a ser recriado
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#btn-ajude-desenvolvedor')) { abrir(); return; }
+    if (e.target.closest('#pix-fechar') || e.target === modal) fechar();
+    if (e.target.closest('#btn-copiar-pix')) {
+      (navigator.clipboard?.writeText(PIX_CHAVE) ?? Promise.reject()).then(() => {
+        $('#pix-copiado').classList.remove('opacity-0');
+        setTimeout(() => $('#pix-copiado').classList.add('opacity-0'), 4000);
+      }).catch(() => prompt('Copie o código PIX (selecione e Ctrl+C):', PIX_CHAVE));
+      return;
+    }
+    if (e.target.closest('#btn-abrir-pix')) {
+      navigator.clipboard?.writeText(PIX_CHAVE).catch(() => {});
+      $('#pix-copiado').classList.remove('opacity-0');
+      location.href = 'pix://pagamento?copiaecola=' + encodeURIComponent(PIX_CHAVE);
+      setTimeout(() => {
+        $('#pix-copiado').textContent = '✔ Copiado! Abra seu app de banco e cole em "PIX copia e cola".';
+        $('#pix-copiado').classList.remove('opacity-0');
+      }, 1200);
     }
   });
 
-  $('#btn-abrir-pix')?.addEventListener('click', () => {
-    // Copia primeiro para a área de transferência, depois tenta o deeplink dos apps
-    navigator.clipboard?.writeText(PIX_CHAVE).catch(() => {});
-    $('#pix-copiado').classList.remove('opacity-0');
-    // Padrão comum em apps bancários (não existe deeplink oficial único):
-    location.href = 'pix://pagamento?copiaecola=' + encodeURIComponent(PIX_CHAVE);
-    setTimeout(() => {
-      $('#pix-copiado').textContent = '✔ Copiado! Cole no seu app de banco (Opções/Depósito por PIX).';
-      $('#pix-copiado').classList.remove('opacity-0');
-    }, 1200);
-  });
-}
-
-function abrirModalPix() {
-  const modal = $('#pix-modal');
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
-  $('#pix-copiado').classList.add('opacity-0');
-  $('#pix-copiado').textContent = '✔ Código PIX copiado! Cole no seu app de banco.';
-  // QR gerado na hora a partir do payload (nada é salvo em lugar nenhum)
-  $('#pix-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?margin=8&size=192x192&data=' + encodeURIComponent(PIX_CHAVE);
+  modal.style.display = 'none'; // garante estado inicial
 }
