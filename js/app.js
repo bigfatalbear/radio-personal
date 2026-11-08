@@ -66,6 +66,28 @@ function atualizarUIExtra() {
   wakelock.instalarVigilancia(player.estaTocando);
   atualizarListaCanais();
   vincularYouTube();
+  vincularLinksChave();
+}
+
+/** Botões de link para gerar chaves + destaque no provedor ativo. */
+function vincularLinksChave() {
+  const destacar = () => {
+    const p = $('#cfg-provedor').value;
+    document.querySelectorAll('[data-link-ia]').forEach((a) => {
+      const ativo = a.dataset.linkIa === p;
+      a.classList.toggle('btn-ciano', ativo);
+      a.classList.toggle('cor-acento-borda-bor', ativo);
+      a.style.fontWeight = ativo ? '600' : '';
+    });
+  };
+  destacar();
+  $('#cfg-provedor')?.addEventListener('change', destacar);
+  // "Usar a mesma chave da IA" → copia a chave dos campos acima para o YouTube
+  document.querySelector('[data-usar-chave-ia]')?.addEventListener('click', () => {
+    const k = $('#cfg-apikey').value.trim();
+    $('#cfg-ytkey').value = k;
+    mostrarFeedback('✔ Mesma chave da IA copiada para o campo do YouTube. Salve as configurações.', 'cor-acento-texto');
+  });
 }
 
 // ============================================================
