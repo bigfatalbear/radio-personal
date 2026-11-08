@@ -138,9 +138,11 @@ function vincularEventos() {
   });
   $('#input-arquivos-local')?.addEventListener('change', (e) => {
     const n = player.adicionarLocais(e.target.files);
-    if (n) feedbackAviso(`${n} arquivo(s) local(is) adicionados à fila.`);
+    if (n) feedbackAviso(`${n} arquivo(s) local(is) adicionados à fila. Use "Enviar locais para o Drive" para deixá-los permanentes.`);
     e.target.value = '';
   });
+  $('#btn-enviar-locais')?.addEventListener('click', aoEnviarLocaisDrive);
+  $('#cfg-entrar-google')?.addEventListener('click', aoEntrarGoogle);
   $('#input-logo')?.addEventListener('change', aoEnviarImagemTema);
   $('#btn-onboarding-fechar')?.addEventListener('click', () => {
     $('#onboarding').remove();
@@ -1084,4 +1086,59 @@ function renderGerenciarPlaylists() {
         <button data-mp="add-fila|${p.id}" class="btn-secundario text-xs py-1 w-full"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Adicionar fila atual a esta playlist</button>
       </div>
     </details>`).join('');
+}
+
+// ============================================================
+// CONTA GOOGLE — login + envio de músicas locais ao Drive
+// ============================================================
+async function aoEntrarGoogle() {
+  const st = $('#cfg-conta-status');
+  const btn = $('#cfg-entrar-google');
+  try {
+    st.textContent = 'Abrindo login do Google…';
+    await sync.entrarComGoogle();
+    st.textContent = '✔ Conectado! Playlists salvas no Drive e uploads liberados.';
+    btn.innerHTML = '<i data-lucide="user-check" class="w-4 h-4"></i> Conta Google conectada';
+    if (window.lucide) lucide.createIcons();
+  } catch (err) {
+    st.textContent = '✖ ' + err.message;
+  }
+}
+
+/** Envia cada faixa local da fila para a pasta do Drive e a converte em faixa Drive. */
+async function aoEnviarLocaisDrive() {
+  const fila = player.getFila();
+  const locais = fila.filter((f) => f.origem === 'local');
+  if (!locais.length) return feedbackAviso('✖ Nenhum arquivo local na fila — adicione antes.');
+  const btn = $('#btn-enviar-locais');
+  btn.disabled = true;
+  try {
+    let ok = 0;
+    for (let i = 0; i < locais.length; i++) {
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> ${i + 1}/${locais.length}`;
+      if (window.lucide) lucide.createIcons();
+      const f = locais[i];
+      try {
+        const blob = await fetch(f.url).then((r) => r.blob());
+        // Convertendo blob para File com nome original para o Drive
+        const ext = (f.nome.split('.').pop() || 'mp3');
+        const arquivo = new File([blob], `${f.nome}.${ext}`, { type: blob.type || 'audio/mpeg' });
+        const { id } = await sync.enviarArquivo(arquivo, arquivo.name, arquivo.type);
+        // Substitui a faixa local pela faixa Drive (agora permanente na playlist também)
+        const idx = fila.indexOf(f);
+        if (idx >= 0) fila[idx] = { id, nome: f.nome, origem: 'drive', url: undefined };
+        ok++;
+      } catch { /* continua com as próximas */ }
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="cloud-upload" class="w-4 h-4"></i> Enviar locais para o Drive';
+    if (window.lucide) lucide.createIcons();
+    feedbackAviso(`✔ ${ok} de ${locais.length} faixa(s) enviadas à pasta do Drive (agora permanentes).`);
+    player.setFila(fila); // sincroniza filaBase (as faixas viraram de Drive)
+    renderFila();
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="cloud-upload" class="w-4 h-4"></i> Enviar locais para o Drive';
+    feedbackAviso('✖ ' + err.message);
+  }
 }

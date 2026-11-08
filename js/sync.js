@@ -100,6 +100,51 @@ export async function restaurarDoDrive() {
 }
 
 // ============================================================
+// CONTA GOOGLE — login explícito + upload de áudio (drive.file)
+// ============================================================
+/** O usuário está conectado (token vivo)? */
+export function conectado() {
+  return Boolean(tokenAcesso && Date.now() < expira - 30_000);
+}
+
+/** Login com a conta Google (usado pelo botão "Entrar com Google"). */
+export async function entrarComGoogle() {
+  await obterToken();
+  return true;
+}
+
+/** Sai (apenas descarta o token local — nada fica no servidor). */
+export function sair() { tokenAcesso = null; expira = 0; }
+
+/**
+ * Envia um arquivo (File/Blob) para a pasta compartilhada configurada.
+ * @param {File|Blob} arquivo  conteúdo
+ * @param {string} nome        nome final no Drive (ex.: musica.mp3)
+ * @param {string} mimeType
+ * @returns {Promise<{id}>} ID do arquivo criado
+ */
+export async function enviarArquivo(arquivo, nome, mimeType) {
+  const pastaId = extrairDriveId(getConfig().driveFonte);
+  if (!pastaId) throw new Error('Configure a pasta do Drive antes de enviar músicas.');
+  const token = await obterToken();
+  const meta = { name: nome, parents: [pastaId] };
+  const forma = new FormData();
+  forma.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+  forma.append('file', new Blob([arquivo], { type: mimeType || 'application/octet-stream' }));
+  const r = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: forma,
+  });
+  if (r.status === 403) throw new Error('Upload recusado (403). Verifique o escopo/Client ID em Configurações.');
+  if (!r.ok) throw new Error(`Falha ao enviar "${nome}" (${r.status}).`);
+  return (await r.json());
+}
+// O arquivo vive em pasta compartilhada "com o link", então qualquer
+// pessoa pode ler via API key. Usado no boot: quem administrar salvou
+// lá uma vez, todos recebem as playlists automaticamente.
+// ============================================================
+// ============================================================
 // MODO OUVINTE — leitura automática SEM login (API key)
 // O arquivo vive em pasta compartilhada "com o link", então qualquer
 // pessoa pode ler via API key. Usado no boot: quem administrar salvou

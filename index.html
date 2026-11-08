@@ -102,6 +102,9 @@
           <i data-lucide="file-audio" class="w-4 h-4"></i> Adicionar arquivos locais
           <input type="file" id="input-arquivos-local" accept="audio/*,.mp3,.m4a,.aac,.ogg,.wav" multiple class="hidden">
         </label>
+        <button id="btn-enviar-locais" class="btn-secundario inline-flex mt-3" title="Enviar os arquivos locais da fila para sua pasta do Drive (login necessário)">
+          <i data-lucide="cloud-upload" class="w-4 h-4"></i> Enviar locais para o Drive
+        </button>
       </div>
 
       <!-- Playlists salvas + ações offline -->
@@ -375,6 +378,10 @@
             <i data-lucide="key-round" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
             <span>Groq: crie a chave gratuita em <a href="https://console.groq.com/keys" target="_blank" rel="noopener" class="underline">console.groq.com/keys</a> (começa com <code>gsk_...</code>).</span>
           </p>
+          <div class="flex gap-2 items-center flex-wrap">
+            <button type="button" id="cfg-entrar-google" class="btn-secundario btn-ciano"><i data-lucide="log-in" class="w-4 h-4"></i> Entrar com Google</button>
+            <span id="cfg-conta-status" class="text-xs text-zinc-500">Conecte-se para salvar playlists e enviar músicas ao Drive</span>
+          </div>
           <p class="text-xs text-zinc-500 flex items-start gap-1.5">
             <i data-lucide="shield-check" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
             A chave é salva via <code class="text-zinc-400">localStorage</code> e nunca sai do seu navegador (exceto para a API do provedor escolhido).
