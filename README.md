@@ -89,6 +89,10 @@ O site fica em `https://SEU_USUARIO.github.io/radio-personal/`.
 3. Copie o link (`https://drive.google.com/drive/folders/ID...`) e cole no campo da aba Configurações → Salvar.
 4. Aba **Player** → **Carregar do Drive**.
 
+### Login Google e sincronização
+
+O botão **Entrar com Google** usa o Client ID público do aplicativo, embutido em `js/sync.js`; cada pessoa autoriza o acesso à própria conta. No Google Cloud, configure o cliente OAuth do tipo **Aplicativo da Web** para aceitar a origem `https://bigfatalbear.github.io` e habilite a Google Drive API. O app usa o escopo `drive.file` para sincronizar playlists e enviar arquivos. Não coloque um client secret no frontend.
+
 ### Identidade da rádio
 
 Em Configurações, informe nome, slogan e uma URL de logotipo (ou `data:image/...` base64). O cabeçalho e o título da aba atualizam automaticamente.

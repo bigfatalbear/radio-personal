@@ -9,10 +9,9 @@
 import { getConfig, extrairDriveId } from './settings.js';
 
 // ============================================================
-// ★★★ CONFIGURAÇÃO DO DEV — cole aqui o seu OAuth Client ID ★★★
-// (console.cloud.google.com/apis/credentials → "Aplicativo da Web",
-//  origem autorizada: https://bigfatalbear.github.io)
-const CLIENT_ID_FIXO = ''; // ex.: '1234567890-abc.apps.googleusercontent.com'
+// Client ID público do aplicativo (OAuth → Aplicativo da Web).
+// A origem https://bigfatalbear.github.io deve estar autorizada no Google Cloud.
+const CLIENT_ID_FIXO = '288831979888-1m0rud19lnvk3eqfqcevsises86b0bqo.apps.googleusercontent.com';
 // ============================================================
 
 const ESCOPO = 'https://www.googleapis.com/auth/drive.file';
@@ -22,7 +21,7 @@ const CLIENTE = 'https://accounts.google.com/gsi/client';
 let tokenAcesso = null;
 let expira = 0;
 
-/** Client ID ativo: fixo no código (dev) — o usuário final nunca informa. */
+/** Client ID público do app; o usuário final entra com a própria conta Google. */
 export function clientIdAtivo() {
   return (getConfig().oauthClientId || CLIENT_ID_FIXO).trim();
 }
@@ -49,7 +48,7 @@ async function obterToken() {
   if (tokenAcesso && Date.now() < expira - 30_000) return tokenAcesso;
   const cid = clientIdAtivo();
   if (!cid) {
-    throw new Error('Login Google indisponível nesta build (Client ID do dev não embutido). ' +
+    throw new Error('Login Google indisponível nesta build (Client ID não configurado). ' +
       'Suas playlists continuam funcionando salvas neste navegador.');
   }
   const oauth = await carregarGSI();
