@@ -263,3 +263,8 @@
 }
 .onboarding svg { width: 1.125rem; height: 1.125rem; color: var(--rp-acento); flex-shrink: 0; margin-top: 1px; }
 .onboarding a { color: var(--rp-acento); font-weight: 600; text-decoration: underline; cursor: pointer; }
+
+/* ===== Mini player do YouTube ===== */
+.yt-moldura iframe { display: block; margin: 0 auto; border: 0; }
+#yt-moldura-escondido iframe { width: 1px !important; height: 1px !important; }
+.faixa-item .yt-badge { font-size: 10px; background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.4); color: #fca5a5; border-radius: 4px; padding: 1px 5px; }

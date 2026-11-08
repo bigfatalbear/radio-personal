@@ -120,6 +120,33 @@
     <section data-page="programacao" class="hidden">
       <h2 class="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">Assistente de Programação (IA)</h2>
 
+      <!-- ============ CANAIS DO YOUTUBE ============ -->
+      <details class="ajuda-card mb-4" id="yt-canais-card" open>
+        <summary class="ajuda-titulo flex items-center gap-2"><i data-lucide="youtube" class="w-4 h-4 text-red-400"></i> Programação a partir de Canais do YouTube <span class="passn" style="display:none"></span></summary>
+        <div class="p-3 space-y-3">
+          <div class="flex gap-2">
+            <input id="yt-canal-novo" class="input text-sm flex-1" placeholder="Link ou @handle do canal (ex.: @AssuntosPodcasts, youtube.com/@canal)">
+            <button id="btn-yt-adicionar" class="btn-secundario btn-ciano text-sm whitespace-nowrap"><i data-lucide="plus" class="w-4 h-4"></i> Cadastrar</button>
+          </div>
+          <ul id="lista-canais" class="flex flex-wrap gap-1.5"></ul>
+          <div class="flex flex-wrap gap-2 items-center">
+            <label class="text-xs text-zinc-400 flex items-center gap-1">Vídeos por canal
+              <select id="yt-max-videos" class="input text-xs py-1"><option value="3">3</option><option value="5" selected>5</option><option value="10">10</option></select>
+            </label>
+            <button id="btn-yt-buscar" class="btn-secundario btn-roxo text-sm"><i data-lucide="search" class="w-4 h-4"></i> Buscar vídeos recentes</button>
+          </div>
+          <div id="yt-videos-resultado" class="space-y-1"></div>
+          <div class="flex flex-wrap gap-2" id="yt-acoes" hidden>
+            <button id="btn-yt-tocar" class="btn-primario text-sm flex-1"><i data-lucide="play" class="w-4 h-4"></i> Tocar seleção agora</button>
+            <button id="btn-yt-programar" class="btn-secundario btn-roxo text-sm"><i data-lucide="wand-2" class="w-4 h-4"></i> Criar programação com IA</button>
+          </div>
+          <p class="text-xs text-zinc-500 flex items-start gap-1.5">
+            <i data-lucide="shield-alert" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
+            <span>O YouTube toca com <strong>vídeo</strong> (oficial, à prova de bloqueio) num mini player que pode ficar escondido. Vídeos com restrição de idade/embedding não podem ser reproduzidos.</span>
+          </p>
+        </div>
+      </details>
+
       <!-- Aviso se a chave não estiver configurada -->
       <div id="aviso-sem-key" class="hidden mb-4 bg-amber-500/10 border border-amber-500/40 text-amber-300 rounded-xl p-4 text-sm flex items-start gap-2">
         <i data-lucide="key-round" class="w-4 h-4 mt-0.5 shrink-0"></i>
@@ -300,6 +327,9 @@
           <label class="text-sm flex flex-col">Chave da API (armazenada apenas neste navegador)
             <input id="cfg-apikey" type="password" autocomplete="off" class="input mt-1 font-mono" placeholder="gsk_... (Groq), AIza... (Gemini) ou sk-... (OpenAI)">
           </label>
+          <label class="text-sm flex flex-col">Chave do YouTube (Data API v3 — para canais; opcional, reutiliza a chave Gemini se vazia)
+            <input id="cfg-ytkey" type="password" autocomplete="off" class="input mt-1 font-mono text-xs" placeholder="AIza...">
+          </label>
           <p id="cfg-provedor-ajuda" class="text-xs text-zinc-500 flex items-start gap-1.5">
             <i data-lucide="key-round" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
             <span>Groq: crie a chave gratuita em <a href="https://console.groq.com/keys" target="_blank" rel="noopener" class="underline">console.groq.com/keys</a> (começa com <code>gsk_...</code>).</span>
@@ -405,6 +435,19 @@
     </section>
 
   </main>
+
+  <!-- Mini player do YouTube (iframe oficial — clicável para expandir/esconder) -->
+  <div id="yt-mini" class="fixed right-4 z-[60] hidden" style="bottom: 92px;">
+    <div class="glass rounded-xl overflow-hidden border border-white/20 shadow-xl">
+      <div class="flex items-center gap-2 px-2 py-1 text-xs text-zinc-300">
+        <i data-lucide="youtube" class="w-3.5 h-3.5 text-red-400"></i>
+        <span class="flex-1 truncate" id="yt-mini-titulo">YouTube</span>
+        <button id="btn-yt-esconder" class="text-zinc-500 hover:text-zinc-200" title="Esconder vídeo (fica só o áudio)"><i data-lucide="eye-off" class="w-3.5 h-3.5"></i></button>
+        <button id="btn-yt-mostrar" class="text-zinc-500 hover:text-zinc-200 hidden" title="Mostrar vídeo"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>
+      </div>
+      <div id="yt-moldura" class="yt-moldura"></div>
+    </div>
+  </div>
 
   <!-- ============================================================
        PLAYER FIXO INFERIOR (estilo Spotify)

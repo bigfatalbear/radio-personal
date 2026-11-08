@@ -13,6 +13,7 @@ import * as scheduler from './scheduler.js';
 import { setEq, iniciarVisualizador, aplicarValores as eqAplicar } from './audiofx.js';
 import { listarVozes } from './tts.js';
 import * as wakelock from './wakelock.js';
+import * as yt from './youtube.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -63,6 +64,8 @@ function atualizarUIExtra() {
   if (!$('#cfg-wakelock').disabled) $('#cfg-wakelock').disabled = !wakelock.suportado();
   atualizarWakelockStatus('inativo');
   wakelock.instalarVigilancia(player.estaTocando);
+  atualizarListaCanais();
+  vincularYouTube();
 }
 
 // ============================================================
@@ -252,6 +255,7 @@ function preencherFormConfig() {
   $('#cfg-logo').value = cfg.rádio.logo || '';
   $('#cfg-provedor').value = cfg.provedor || 'gemini';
   $('#cfg-apikey').value = cfg.apiKey || '';
+  $('#cfg-ytkey').value = cfg.youtubeApiKey || '';
   $('#cfg-drive').value = cfg.driveFonte || '';
 }
 
@@ -261,6 +265,7 @@ function aoSalvarConfig(e) {
   salvarConfig({
     provedor: $('#cfg-provedor').value,
     apiKey: $('#cfg-apikey').value.trim(),
+    youtubeApiKey: $('#cfg-ytkey').value.trim(),
     driveFonte: $('#cfg-drive').value.trim(),
     rádio: {
       nome: $('#cfg-nome').value.trim() || 'Rádio Personal',
@@ -394,7 +399,7 @@ function renderFila() {
       </span>
       <div class="min-w-0 flex-1">
         <p class="text-sm font-medium truncate">${f.nome}</p>
-        <p class="text-xs text-zinc-500">${f.origem === 'drive' ? 'Google Drive' : 'Arquivo local'}</p>
+        <p class="text-xs text-zinc-500">${f.origem === 'drive' ? 'Google Drive' : f.origem === 'youtube' ? `YouTube · ${f.canal ?? ''}` : 'Arquivo local'}</p>
       </div>
       <button data-fav="${i}" class="shrink-0 ${fav ? 'text-pink-400' : 'text-zinc-600 hover:text-pink-300'} transition"
               title="${fav ? 'Remover dos favoritos' : 'Favoritar'}">
@@ -680,4 +685,188 @@ function atualizarWakelockStatus(estado) {
       atualizarWakelockStatus(wakelock.estaAtivo() ? 'ativo' : 'inativo');
     }, 8000);
   }
+}
+
+// ============================================================
+// YOUTUBE — canais, vídeos recentes e programação
+// ============================================================
+let videosYT = [];          // últimos vídeos encontrados
+let selecaoYT = new Set();  // videoId selecionados
+
+function vincularYouTube() {
+  $('#btn-yt-adicionar')?.addEventListener('click', aoAdicionarCanal);
+  $('#yt-canal-novo')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); aoAdicionarCanal(); } });
+  $('#btn-yt-buscar')?.addEventListener('click', aoBuscarVideosYT);
+  $('#btn-yt-tocar')?.addEventListener('click', aoTocarSelecaoYT);
+  $('#btn-yt-programar')?.addEventListener('click', aoProgramarSelecaoYT);
+  $('#btn-yt-esconder')?.addEventListener('click', () => alternarYTMini(false));
+  $('#btn-yt-mostrar')?.addEventListener('click', () => alternarYTMini(true));
+  atualizarListaCanais();
+}
+
+async function aoAdicionarCanal() {
+  const inp = $('#yt-canal-novo');
+  const texto = inp.value.trim();
+  if (!texto) return;
+  const btn = $('#btn-yt-adicionar');
+  btn.disabled = true;
+  try {
+    const canal = await yt.adicionarCanal(texto);
+    inp.value = '';
+    atualizarListaCanais();
+    feedbackAviso(`✔ Canal "${canal.titulo}" cadastrado.`);
+  } catch (err) {
+    alert(err.message);
+  } finally { btn.disabled = false; }
+}
+
+function atualizarListaCanais() {
+  const ul = $('#lista-canais');
+  if (!ul) return;
+  const canais = yt.getCanais();
+  ul.innerHTML = canais.map((c) => `
+    <li class="flex items-center gap-1.5 text-xs bg-white/5 border border-white/10 rounded-full pl-3 pr-1 py-1">
+      <i data-lucide="youtube" class="w-3 h-3 text-red-400"></i>
+      <span class="font-medium">${c.titulo}</span>
+      <button data-rem-canal="${c.id}" class="text-zinc-500 hover:text-red-400 transition p-0.5" title="Remover canal">
+        <i data-lucide="x" class="w-3 h-3"></i>
+      </button>
+    </li>`).join('');
+  ul.querySelectorAll('[data-rem-canal]').forEach((btn) =>
+    btn.addEventListener('click', () => {
+      yt.removerCanal(btn.dataset.remCanal);
+      atualizarListaCanais();
+    }));
+  if (window.lucide) lucide.createIcons();
+}
+
+async function aoBuscarVideosYT() {
+  const alvo = $('#yt-videos-resultado');
+  const btn = $('#btn-yt-buscar');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Buscando…';
+  alvo.innerHTML = '<p class="text-sm text-zinc-400 flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-pulse"></i> Consultando canais no YouTube…</p>';
+  try {
+    videosYT = await yt.listarVideosRecentes(Number($('#yt-max-videos').value) || 5);
+    selecaoYT = new Set(videosYT.slice(0, 3).map((v) => v.videoId)); // pré-seleciona os 3 mais recentes
+    renderVideosYT();
+    $('#yt-acoes').hidden = false;
+    if (window.lucide) lucide.createIcons();
+  } catch (err) {
+    alvo.innerHTML = `
+      <div class="bg-red-500/10 border border-red-500/40 text-red-300 rounded-xl p-3 text-sm flex items-start gap-2">
+        <i data-lucide="alert-triangle" class="w-4 h-4 mt-0.5 shrink-0"></i><span>${err.message}</span>
+      </div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="search" class="w-4 h-4"></i> Buscar vídeos recentes';
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function renderVideosYT() {
+  const alvo = $('#yt-videos-resultado');
+  alvo.innerHTML = videosYT.length ? videosYT.map((v) => {
+    const sel = selecaoYT.has(v.videoId);
+    const d = v.publicado ? new Date(v.publicado).toLocaleDateString('pt-BR') : '';
+    return `
+    <label class="flex items-center gap-2.5 p-2 rounded-lg bg-white/[0.03] border border-white/10 text-sm cursor-pointer hover:bg-white/[0.06] transition">
+      <input type="checkbox" data-yt-sel="${v.videoId}" ${sel ? 'checked' : ''} class="w-4 h-4 accent-cyan-500 shrink-0">
+      <div class="min-w-0 flex-1">
+        <p class="font-medium truncate">${v.nome || '(sem título)'}</p>
+        <p class="text-xs text-zinc-500 truncate">${v.canal} · ${d}</p>
+      </div>
+      <span class="yt-badge shrink-0">YT</span>
+    </label>`;
+  }).join('') : '<p class="text-sm text-zinc-500 italic">Nenhum vídeo encontrado nos canais cadastrados.</p>';
+  alvo.querySelectorAll('[data-yt-sel]').forEach((cb) =>
+    cb.addEventListener('change', () => {
+      cb.checked ? selecaoYT.add(cb.dataset.ytSel) : selecaoYT.delete(cb.dataset.ytSel);
+      $('#yt-acoes').hidden = selecaoYT.size === 0;
+    }));
+}
+
+/** Faixas do YouTube prontas para o player (na ordem exibida). */
+function faixasSelecionadasYT() {
+  return videosYT
+    .filter((v) => selecaoYT.has(v.videoId))
+    .map((v) => ({ origem: 'youtube', videoId: v.videoId, nome: v.nome, canal: v.canal, thumb: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg` }));
+}
+
+function aoTocarSelecaoYT() {
+  const faixas = faixasSelecionadasYT();
+  if (!faixas.length) return alert('Selecione ao menos um vídeo.');
+  player.setFila(faixas);
+  player.tocar(0);
+  mostrarMiniYT();
+  document.querySelector('[data-tab="player"]')?.click();
+}
+
+async function aoProgramarSelecaoYT() {
+  if (!iaDisponivel()) {
+    atualizarAvisos();
+    $('#aviso-sem-key').classList.remove('hidden');
+    document.querySelector('[data-tab="config"]')?.click();
+    return;
+  }
+  const acervoVideos = videosYT.filter((v) => selecaoYT.has(v.videoId));
+  if (!acervoVideos.length) return alert('Selecione ao menos um vídeo.');
+  const btn = $('#btn-yt-programar');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> IA montando…';
+  try {
+    const prog = await gerarProgramacao({
+      descricao: $('#ia-descricao').value || 'Programação de rádio com os vídeos mais recentes dos canais cadastrados',
+      horas: Number($('#ia-horas').value) || 1,
+      estilo: $('#ia-estilo').value,
+    }, acervoVideos); // ← acervo = títulos reais dos vídeos ({nome})
+    // Ordena a seleção conforme a sugestão da IA (títulos que a IA citou primeiro)
+    const ordemIA = [...(prog.ordemReproducao ?? []).map((n) => acervoVideos.find((v) => v.nome === n))].filter(Boolean);
+    const restantes = acervoVideos.filter((v) => !ordemIA.includes(v));
+    const faixasOrdem = [...ordemIA, ...restantes].map((v) => ({
+      origem: 'youtube', videoId: v.videoId, nome: v.nome, canal: v.canal,
+      thumb: `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`,
+    }));
+    player.setFila(faixasOrdem);
+    player.tocar(0);
+    mostrarMiniYT();
+    feedbackAviso('✔ Programação do YouTube montada pela IA e tocando.');
+    document.querySelector('[data-tab="player"]')?.click();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="wand-2" class="w-4 h-4"></i> Criar programação com IA';
+  }
+}
+
+// ============================================================
+// MINI PLAYER YOUTUBE (visível/escondido)
+// ============================================================
+function mostrarMiniYT() {
+  const mini = $('#yt-mini');
+  mini?.classList.remove('hidden');
+  const f = player.getAtual();
+  $('#yt-mini-titulo').textContent = f?.nome ?? 'YouTube';
+}
+
+function alternarYTMini(visivel) {
+  player.alternarVideoYT(visivel);
+  $('#btn-yt-esconder').classList.toggle('hidden', !visivel);
+  $('#btn-yt-mostrar').classList.toggle('hidden', visivel);
+  const moldura = $('#yt-moldura');
+  moldura.style.height = visivel ? '' : '2px';
+  moldura.style.overflow = 'hidden';
+  if (visivel) sanitizeMoldura(); else esconderIframe();
+}
+
+function esconderIframe() {
+  // NO display:none — esconde com clamp de altura (o vídeo continua tocando)
+  $('#yt-moldura').style.height = '2px';
+  $('#yt-moldura').style.overflow = 'hidden';
+}
+function sanitizeMoldura() {
+  const m = $('#yt-moldura');
+  m.style.height = '144px';
+  m.style.overflow = 'hidden';
 }

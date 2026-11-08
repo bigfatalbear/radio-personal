@@ -7,6 +7,7 @@ import { urlStream } from './drive.js';
 import { resolverOffline } from './offline.js';
 import { ttsAtivo, anunciarFaixa, parar as pararTTS } from './tts.js';
 import { conectar as conectarFX, instalarAbafar } from './audiofx.js';
+import * as yt from './youtube.js';
 
 const audio = new Audio();
 audio.preload = 'metadata';
@@ -80,10 +81,19 @@ export function toggleShuffle() {
 }
 
 function normalizar(f) {
+  // YouTube: faixa leva videoId (sem url de stream)
+  if (f.origem === 'youtube' || (!f.url && !f.id && f.videoId)) {
+    return { ...f, origem: 'youtube', url: null };
+  }
   if (f.url) return { ...f, origem: f.origem ?? 'local' };
   return { ...f, origem: f.origem ?? 'drive', url: urlStream(f.id) };
 }
 function normalizarFaixa(f) { return normalizar(f); } // alias de compatibilidade
+
+// ===== Estado do modo YouTube =====
+let modoYT = false;            // faixa atual é do YouTube?
+let modoYTOffscreen = false;   // mini player escondido (áudio) ou visível
+let volumeAtual = 80;
 
 // ===== Controles =====
 export async function tocar(indice = null) {
@@ -91,6 +101,23 @@ export async function tocar(indice = null) {
   const faixa = getAtual();
   if (!faixa) return;
   normalizarFaixa(faixa);
+
+  // ===== Faixa do YouTube: mini player embutido (IFrame API) =====
+  if (faixa.origem === 'youtube' && faixa.videoId) {
+    modoYT = true;
+    try {
+      await yt.tocarVideo(faixa.videoId);
+      yt.setVolume(volumeAtual);
+      atualizarMediaSession(faixa);
+      callbacks.onStatus('tocando');
+      iniciarPulsoYouTube();
+      return;
+    } catch {
+      callbacks.onStatus('erro');
+      return;
+    }
+  }
+  modoYT = false;
 
   // 1) Cache offline primeiro (sem rede); 2) stream normal como fallback
   let url = await resolverOffline(faixa);
@@ -104,16 +131,7 @@ export async function tocar(indice = null) {
 
   audio.src = url;
   audio.load();
-  // Metadados para a tela de bloqueio/notificação (capa = logo da rádio, se houver)
-  if (mediaSession) {
-    mediaSession.metadata = new MediaMetadata({
-      title: faixa.nome,
-      artist: nomeRadio,
-      album: 'Rádio Personal',
-      artwork: window.__radioLogoUrl ? [{ src: window.__radioLogoUrl, sizes: '256x256', type: 'image/png' }] : [],
-    });
-    mediaSession.playbackState = 'playing';
-  }
+  atualizarMediaSession(faixa);
   try {
     await audio.play();
     callbacks.onStatus('tocando');
@@ -123,8 +141,28 @@ export async function tocar(indice = null) {
   }
 }
 
+/** Metadados da tela de bloqueio (capa = logo da rádio para faixas do Drive; thumb do vídeo para YouTube). */
+function atualizarMediaSession(faixa) {
+  if (!mediaSession) return;
+  const capa = faixa.origem === 'youtube'
+    ? (faixa.thumb ? [{ src: faixa.thumb, sizes: '256x256', type: 'image/jpeg' }] : [])
+    : (window.__radioLogoUrl ? [{ src: window.__radioLogoUrl, sizes: '256x256', type: 'image/png' }] : []);
+  mediaSession.metadata = new MediaMetadata({
+    title: faixa.nome,
+    artist: faixa.origem === 'youtube' ? `YouTube · ${faixa.canal ?? ''}` : nomeRadio,
+    album: 'Rádio Personal',
+    artwork: capa,
+  });
+  mediaSession.playbackState = 'playing';
+}
+
 export function playPause() {
   if (indiceAtual === -1 && fila.length) return tocar(0);
+  if (modoYT) {
+    if (yt.estaTocando()) { yt.pausar(); callbacks.onStatus('pausado'); mediaSession && (mediaSession.playbackState = 'paused'); }
+    else { yt.continuar(); callbacks.onStatus('tocando'); mediaSession && (mediaSession.playbackState = 'playing'); }
+    return;
+  }
   if (audio.paused) audio.play().catch(() => {});
   else audio.pause();
   callbacks.onStatus(audio.paused ? 'pausado' : 'tocando');
@@ -141,15 +179,64 @@ export function anterior() {
   if (indiceAtual > 0) tocar(indiceAtual - 1);
 }
 
-export function setVolume(v) { audio.volume = Math.min(1, Math.max(0, v / 100)); }
+export function setVolume(v) {
+  volumeAtual = Math.round(Math.min(100, Math.max(0, v)));
+  if (modoYT) yt.setVolume(volumeAtual);
+  else audio.volume = Math.min(1, Math.max(0, v / 100));
+}
 
 /** Está tocando agora (áudio não pausado e com fonte)? */
 export function estaTocando() {
+  if (modoYT) return yt.estaTocando();
   return Boolean(audio.src) && !audio.paused && !audio.ended;
 }
 
 export function seek(fraction) {
+  if (modoYT) return yt.buscarPara(fraction);
   if (audio.duration && isFinite(audio.duration)) audio.currentTime = fraction * audio.duration;
+}
+
+// ===== Pulso de progresso do YouTube (sem timeupdate nativo) =====
+let ytPulso = null;
+function iniciarPulsoYouTube() {
+  pararPulsoYouTube();
+  ytPulso = setInterval(() => {
+    const d = yt.duracao();
+    if (!d) return;
+    callbacks.onProgresso({ atual: yt.tempoAtual(), duracao: d, frac: yt.tempoAtual() / d });
+  }, 500);
+}
+function pararPulsoYouTube() {
+  if (ytPulso) { clearInterval(ytPulso); ytPulso = null; }
+}
+
+/** Fim de faixa (elemento <audio> ou vídeo do YouTube): mesma rota — TTS e próxima. */
+async function fimDeFaixa() {
+  pararPulsoYouTube();
+  const proximaFaixa = fila[indiceAtual + 1] ?? (fila.length ? fila[0] : null);
+  if (ttsAtivo() && proximaFaixa) {
+    callbacks.onStatus('pausado');
+    await anunciarFaixa(proximaFaixa, obterNomeRadio());
+    tocar(indiceAtual + 1 < fila.length ? indiceAtual + 1 : 0);
+    return;
+  }
+  proxima();
+}
+window.__ytFim = fimDeFaixa;              // YouTube: estado 0 (END)
+window.__ytEstado = (s) => {              // YouTube: pausado/buffering ao vivo
+  if (s === 2) { callbacks.onStatus('pausado'); mediaSession && (mediaSession.playbackState = 'paused'); }
+  if (s === 1) { callbacks.onStatus('tocando'); mediaSession && (mediaSession.playbackState = 'playing'); }
+};
+window.__ytErro = () => {
+  callbacks.onStatus('erro');
+  if (fila.length) proxima();
+};
+
+// Modo mini player: escondido (áudio) ou visível (vídeo)
+export function alternarVideoYT(visivel) {
+  modoYTOffscreen = !visivel;
+  yt.definirVisivel(visivel);
+  return modoYTOffscreen;
 }
 
 // ===== Eventos do <audio> =====

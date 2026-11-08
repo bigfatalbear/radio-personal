@@ -65,11 +65,17 @@ RETORNE EXCLUSIVAMENTE um JSON válido (sem markdown, sem comentários) com o fo
  * Chama a API de IA configurada e devolve o objeto de programação.
  * @returns {Promise<{nomeBloco, grade, locucao, ordemReproducao}>}
  */
-export async function gerarProgramacao({ descricao, horas = 2, estilo = 'descontraido' }) {
+export async function gerarProgramacao(
+  { descricao, horas = 2, estilo = 'descontraido' },
+  acervoOverride = null, // ex.: lista de vídeos do YouTube selecionados
+) {
   const cfg = getConfig();
   if (!cfg.apiKey) throw erroChaveAusente();
 
-  const prompt = montarPrompt({ descricao, horas, estilo, acervo: acervoRef?.() ?? [] });
+  const prompt = montarPrompt({
+    descricao, horas, estilo,
+    acervo: acervoOverride ?? acervoRef?.() ?? [],
+  });
 
   if (cfg.provedor === 'gemini') return chamarGemini(prompt, cfg.apiKey);
   // Groq e OpenAI falam o mesmo protocolo OpenAI-compatible
