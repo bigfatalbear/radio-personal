@@ -115,7 +115,15 @@ function configurarTabs() {
   $$('[data-tab]').forEach((btn) => {
     btn.addEventListener('click', () => {
       $$('[data-tab]').forEach((b) => b.classList.toggle('ativo', b.dataset.tab === btn.dataset.tab));
+      $$('[data-scroll-to]').forEach((b) => b.classList.remove('ativo'));
       $$('[data-page]').forEach((p) => p.classList.toggle('hidden', p.dataset.page !== btn.dataset.tab));
+    });
+  });
+  $$('[data-scroll-to]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      $$('.sidebar-link').forEach((link) => link.classList.remove('ativo'));
+      btn.classList.add('ativo');
+      document.getElementById(btn.dataset.scrollTo)?.scrollIntoView({ block: 'start' });
     });
   });
   $$('[data-tab="player"]').forEach((btn) => btn.classList.add('ativo'));
@@ -413,6 +421,29 @@ function vincularPlayer() {
   $('#btn-proxima').addEventListener('click', () => player.proxima());
   $('#btn-anterior').addEventListener('click', () => player.anterior());
   $('#ctrl-volume').addEventListener('input', (e) => player.setVolume(e.target.value));
+  const btnTelaCheia = $('#btn-tela-cheia');
+  const statusTelaCheia = $('#tela-cheia-status');
+  if (!document.documentElement.requestFullscreen || !document.exitFullscreen) {
+    btnTelaCheia.disabled = true;
+    btnTelaCheia.title = 'Tela cheia não suportada neste navegador';
+  } else {
+    btnTelaCheia.addEventListener('click', async () => {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await document.documentElement.requestFullscreen();
+      } catch (err) {
+        statusTelaCheia.textContent = `Não foi possível alternar para tela cheia: ${err.message}`;
+      }
+    });
+    document.addEventListener('fullscreenchange', () => {
+      const ativo = Boolean(document.fullscreenElement);
+      btnTelaCheia.setAttribute('aria-label', ativo ? 'Sair da tela cheia' : 'Ativar tela cheia');
+      btnTelaCheia.title = ativo ? 'Sair da tela cheia' : 'Ativar tela cheia';
+      btnTelaCheia.innerHTML = `<i data-lucide="${ativo ? 'minimize' : 'maximize'}" class="w-4 h-4"></i>`;
+      statusTelaCheia.textContent = ativo ? 'Tela cheia ativada.' : 'Tela cheia desativada.';
+      if (window.lucide) lucide.createIcons();
+    });
+  }
   const barra = $('#progresso-barra');
   barra.parentElement.addEventListener('click', (e) => {
     const rect = barra.parentElement.getBoundingClientRect();

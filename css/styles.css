@@ -489,6 +489,7 @@ body {
 }
 
 .app-content { width: min(100%, 1120px); margin: 14px auto 0; }
+#lista-fila { scroll-margin-top: 1rem; }
 .app-content > section { animation: page-arrive .22s ease-out; }
 @keyframes page-arrive { from { opacity: .65; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
 .app-content .onboarding {

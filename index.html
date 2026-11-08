@@ -51,11 +51,12 @@
         <p id="hdr-slogan">Sua rádio, seu estilo</p>
       </div>
 
-      <nav class="sidebar-nav" role="tablist" aria-label="Navegação principal">
-        <button data-tab="player" class="sidebar-link" role="tab"><i data-lucide="house"></i><span>Início</span></button>
-        <button data-tab="programacao" class="sidebar-link" role="tab"><i data-lucide="sparkles"></i><span>Programação IA</span></button>
-        <button data-tab="config" class="sidebar-link" role="tab"><i data-lucide="settings-2"></i><span>Configurações</span></button>
-        <button data-tab="ajuda" class="sidebar-link" role="tab"><i data-lucide="circle-help"></i><span>Ajuda</span></button>
+      <nav class="sidebar-nav" aria-label="Navegação principal">
+        <button data-tab="player" class="sidebar-link"><i data-lucide="house"></i><span>Início</span></button>
+        <button type="button" data-scroll-to="lista-fila" class="sidebar-link"><i data-lucide="audio-lines"></i><span>Player</span></button>
+        <button data-tab="programacao" class="sidebar-link"><i data-lucide="sparkles"></i><span>Programação IA</span></button>
+        <button data-tab="config" class="sidebar-link"><i data-lucide="settings-2"></i><span>Configurações</span></button>
+        <button data-tab="ajuda" class="sidebar-link"><i data-lucide="circle-help"></i><span>Ajuda</span></button>
       </nav>
 
       <div class="sidebar-promo">
@@ -599,6 +600,10 @@
         <div class="hidden md:block text-xs font-mono text-zinc-500 tabular-nums w-24 text-right">
           <span id="tempo-atual">0:00</span> / <span id="tempo-total">0:00</span>
         </div>
+        <button id="btn-tela-cheia" class="controle hidden sm:inline-flex" type="button" aria-label="Ativar tela cheia" title="Ativar tela cheia">
+          <i data-lucide="maximize" class="w-4 h-4"></i>
+        </button>
+        <span id="tela-cheia-status" class="sr-only" aria-live="polite"></span>
       </div>
     </div>
   </footer>
