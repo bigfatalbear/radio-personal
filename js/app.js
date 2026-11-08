@@ -917,8 +917,8 @@ function sanitizeMoldura() {
 // AJUDE O DESENVOLVEDOR — PIX (copia e cola + QR)
 // ============================================================
 const PIX_CHAVE =
-  '00020126450014br.gov.bcb.pix0123fabiosilvaanjos@jim.com5204000053039865802BR' +
-  '5921FABIO SILVA DOS ANJOS6015SALINAS DA MARG62070503***6304562B3A2D';
+  '00020126330014br.gov.bcb.pix0111015619225015204000053039865802BR' +
+  '5921FABIO SILVA DOS ANJOS6009Sao Paulo62290525REC6AF09CB01264A2203363336304C140';
 
 function vincularPix() {
   const modal = $('#pix-modal');
@@ -947,11 +947,24 @@ function vincularPix() {
     if (e.target.closest('#btn-abrir-pix')) {
       navigator.clipboard?.writeText(PIX_CHAVE).catch(() => {});
       $('#pix-copiado').classList.remove('opacity-0');
-      location.href = 'pix://pagamento?copiaecola=' + encodeURIComponent(PIX_CHAVE);
+
+      const links = [
+        'pix://copiaecola?text=' + encodeURIComponent(PIX_CHAVE),
+        'bank://?pix=' + encodeURIComponent(PIX_CHAVE),
+      ];
+
+      // Tenta abrir o app do banco, mas cai em fallback seguro se o deep link não for reconhecido.
+      window.location.href = links[0];
       setTimeout(() => {
-        $('#pix-copiado').textContent = '✔ Copiado! Abra seu app de banco e cole em "PIX copia e cola".';
-        $('#pix-copiado').classList.remove('opacity-0');
-      }, 1200);
+        if (document.visibilityState === 'visible') {
+          $('#pix-copiado').textContent = '✔ Copiado! Abra seu app de banco e cole em "PIX copia e cola".';
+          $('#pix-copiado').classList.remove('opacity-0');
+          const fallback = window.prompt?.('Código PIX (copie e cole no seu app de banco):', PIX_CHAVE);
+          if (fallback === null) {
+            $('#pix-copiado').textContent = '✔ Código PIX copiado. Cole no seu app de banco.';
+          }
+        }
+      }, 1400);
     }
   });
 

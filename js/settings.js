@@ -24,11 +24,27 @@ export const CONFIG_PADRAO = {
 
 let cache = null;
 
+function eObjetoSimples(valor) {
+  return valor !== null && typeof valor === 'object' && !Array.isArray(valor);
+}
+
+function mesclarObjetos(base, parcial) {
+  const resultado = { ...base };
+  for (const [chave, valor] of Object.entries(parcial ?? {})) {
+    if (eObjetoSimples(valor) && eObjetoSimples(resultado[chave])) {
+      resultado[chave] = mesclarObjetos(resultado[chave], valor);
+      continue;
+    }
+    resultado[chave] = valor;
+  }
+  return resultado;
+}
+
 /** Lê as configurações (cache em memória) */
 export function getConfig() {
   if (cache) return cache;
   try {
-    cache = { ...CONFIG_PADRAO, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') };
+    cache = mesclarObjetos(CONFIG_PADRAO, JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
   } catch {
     cache = { ...CONFIG_PADRAO };
   }
@@ -38,11 +54,7 @@ export function getConfig() {
 /** Salva (merge) e atualiza o cache em memória */
 export function salvarConfig(parcial) {
   const atual = getConfig();
-  cache = {
-    ...atual,
-    ...parcial,
-    rádio: { ...atual.rádio, ...(parcial.rádio ?? {}) },
-  };
+  cache = mesclarObjetos(atual, parcial ?? {});
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
   return cache;
 }
