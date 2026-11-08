@@ -91,7 +91,11 @@ O site fica em `https://SEU_USUARIO.github.io/radio-personal/`.
 
 ### Login Google e sincronização
 
-O botão **Entrar com Google** usa o Client ID público do aplicativo, embutido em `js/sync.js`; cada pessoa autoriza o acesso à própria conta. No Google Cloud, configure o cliente OAuth do tipo **Aplicativo da Web** para aceitar a origem `https://bigfatalbear.github.io` e habilite a Google Drive API. O app usa o escopo `drive.file` para sincronizar playlists e enviar arquivos. Não coloque um client secret no frontend.
+O botão **Entrar com Google** usa o Client ID público do aplicativo, embutido em `js/sync.js`; cada pessoa autoriza o acesso à própria conta. O ID não é um segredo e não deve ser confundido com um *client secret*. O app ignora valores antigos de `oauthClientId` que possam ter ficado no `localStorage`.
+
+No [Google Cloud Console → APIs e serviços → Credenciais](https://console.cloud.google.com/apis/credentials), o administrador deve manter um cliente OAuth do tipo **Aplicativo da Web** ativo, com `https://bigfatalbear.github.io` em **Origens JavaScript autorizadas**, e habilitar a Google Drive API. O app usa o escopo `drive.file` para sincronizar playlists e enviar arquivos. Se o Google mostrar **Erro 401: invalid_client**, confirme que o Client ID embutido ainda existe e está ativo; se foi removido ou desativado, crie outro cliente Web, atualize `CLIENT_ID_FIXO` em `js/sync.js` e publique a alteração. Um Client ID novo não corrige erros inevitáveis do provedor, e o app não pode reativar credenciais no projeto Cloud.
+
+Após atualizar o app, recarregue a página ou use o aviso **Nova versão disponível** para substituir arquivos offline antigos.
 
 ### Identidade da rádio
 

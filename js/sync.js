@@ -23,7 +23,9 @@ let expira = 0;
 
 /** Client ID público do app; o usuário final entra com a própria conta Google. */
 export function clientIdAtivo() {
-  return (getConfig().oauthClientId || CLIENT_ID_FIXO).trim();
+  // Ignore oauthClientId legado do localStorage: o campo foi removido da UI
+  // e um valor antigo pode apontar para um cliente inválido.
+  return CLIENT_ID_FIXO.trim();
 }
 
 /** Client ID do OAuth configurado? (campo escondido mantido por compatibilidade) */
@@ -35,8 +37,19 @@ function carregarGSI() {
     window.__gsiPromise = new Promise((res, rej) => {
       const s = document.createElement('script');
       s.src = CLIENTE; s.async = true; s.defer = true;
-      s.onload = () => res(window.google.accounts.oauth2);
-      s.onerror = () => rej(new Error('Falha ao carregar o login do Google (rede?).'));
+      s.onload = () => {
+        const oauth = window.google?.accounts?.oauth2;
+        if (!oauth) {
+          window.__gsiPromise = null;
+          rej(new Error('O Google Identity Services carregou sem a API de login. Verifique bloqueadores de conteúdo e tente novamente.'));
+          return;
+        }
+        res(oauth);
+      };
+      s.onerror = () => {
+        window.__gsiPromise = null;
+        rej(new Error('Falha ao carregar o login do Google. Verifique sua conexão ou bloqueadores de conteúdo e tente novamente.'));
+      };
       document.head.appendChild(s);
     });
   }
@@ -57,7 +70,22 @@ async function obterToken() {
       client_id: cid,
       scope: ESCOPO,
       callback: (resp) => {
-        if (resp.error) return reject(new Error('Login Google cancelado: ' + resp.error));
+        if (resp.error === 'invalid_client') {
+          return reject(new Error(
+            'O Google não reconheceu o Client ID deste app (invalid_client/401). Atualize o app e tente novamente. ' +
+            'Se persistir, o administrador precisa reativar ou recriar o OAuth Client Web no Google Cloud, publicar o novo ID ' +
+            'e confirmar a origem autorizada https://bigfatalbear.github.io. Suas playlists locais continuam salvas.'
+          ));
+        }
+        if (resp.error === 'access_denied') {
+          return reject(new Error('O login Google foi cancelado ou o acesso foi recusado. Tente novamente se quiser conectar a conta.'));
+        }
+        if (resp.error) {
+          return reject(new Error(`O login Google não foi concluído (${resp.error}). Tente novamente; se persistir, contate o administrador do app.`));
+        }
+        if (!resp.access_token) {
+          return reject(new Error('O Google não retornou um token de acesso. Tente novamente.'));
+        }
         tokenAcesso = resp.access_token;
         expira = Date.now() + (resp.expires_in ?? 3600) * 1000;
         resolve(tokenAcesso);
