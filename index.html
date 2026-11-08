@@ -56,6 +56,10 @@
       <div id="badge-ao-vivo" class="hidden items-center gap-1.5 text-xs font-bold text-white bg-emerald-500/15 border border-emerald-400/40 rounded-full px-3 py-1 backdrop-blur" style="box-shadow:0 0 16px -2px var(--rp-acento-suave)">
         <span class="w-2 h-2 rounded-full cor-acento-fun animate-pulse"></span> AO VIVO
       </div>
+      <!-- Ajude o desenvolvedor ♥ -->
+      <button id="btn-ajude-desenvolvedor" class="flex items-center gap-1.5 text-xs font-semibold text-pink-200 bg-pink-500/10 border border-pink-400/40 rounded-full px-3 py-1 hover:bg-pink-500/20 transition backdrop-blur" title="Ajude o desenvolvedor via PIX ♥">
+        <i data-lucide="heart-handshake" class="w-3.5 h-3.5"></i> <span class="hidden sm:inline">Ajude o dev</span>
+      </button>
     </div>
     <!-- Navegação por abas (pílulas de vidro coloridas) -->
     <nav class="max-w-5xl mx-auto px-4 pb-3 flex gap-2 overflow-x-auto" role="tablist" aria-label="Navegação principal">
@@ -473,6 +477,30 @@
         <button id="btn-yt-mostrar" class="text-zinc-500 hover:text-zinc-200 hidden" title="Mostrar vídeo"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>
       </div>
       <div id="yt-moldura" class="yt-moldura"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL — Ajude o Desenvolvedor (PIX)
+       ============================================================ -->
+  <div id="pix-modal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="glass rounded-2xl border border-pink-400/30 max-w-sm w-full p-6 text-center space-y-4" style="box-shadow:0 0 40px -8px rgba(236,72,153,.35)">
+      <button id="pix-fechar" class="absolute top-3 right-4 text-zinc-400 hover:text-white text-2xl leading-none" aria-label="Fechar">×</button>
+      <i data-lucide="heart-handshake" class="w-10 h-10 text-pink-400 mx-auto"></i>
+      <div>
+        <h3 class="text-lg font-bold text-white">Ajude o Desenvolvedor ♥</h3>
+        <p class="text-sm text-zinc-400 mt-1">Tudo aqui é gratuito e sem anúncios. Uma doação via PIX ajuda a manter a rádio no ar!</p>
+      </div>
+      <!-- QR da chave PIX (gerado no ato, sem salvar nada) -->
+      <div class="bg-white rounded-xl p-2 inline-block">
+        <img id="pix-qr" alt="QR Code PIX" class="w-48 h-48">
+      </div>
+      <p class="text-xs text-zinc-500 mx-auto max-w-56 break-all font-mono leading-relaxed">FABIO SILVA DOS ANJOS<br>fabiosilvaanjos@jim.com</p>
+      <div class="space-y-2">
+        <button id="btn-copiar-pix" class="btn-primario w-full"><i data-lucide="copy" class="w-4 h-4"></i> Copiar código PIX (copia e cola)</button>
+        <button id="btn-abrir-pix" class="btn-secundario btn-roxo w-full"><i data-lucide="external-link" class="w-4 h-4"></i> Abrir meu app de banco</button>
+        <p id="pix-copiado" class="text-xs cor-acento-texto font-semibold opacity-0 transition">✔ Código PIX copiado! Cole no seu app de banco.</p>
+      </div>
     </div>
   </div>
 

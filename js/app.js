@@ -67,6 +67,7 @@ function atualizarUIExtra() {
   atualizarListaCanais();
   vincularYouTube();
   vincularLinksChave();
+  vincularPix();
 }
 
 /** Botões de link para gerar chaves + destaque no provedor ativo. */
@@ -891,4 +892,52 @@ function sanitizeMoldura() {
   const m = $('#yt-moldura');
   m.style.height = '144px';
   m.style.overflow = 'hidden';
+}
+
+// ============================================================
+// AJUDE O DESENVOLVEDOR — PIX (copia e cola + QR)
+// ============================================================
+const PIX_CHAVE =
+  '00020126450014br.gov.bcb.pix0123fabiosilvaanjos@jim.com5204000053039865802BR' +
+  '5921FABIO SILVA DOS ANJOS6015SALINAS DA MARG62070503***6304562B3A2D';
+
+function vincularPix() {
+  const modal = $('#pix-modal');
+  $('#btn-ajude-desenvolvedor')?.addEventListener('click', abrirModalPix);
+  $('#pix-fechar')?.addEventListener('click', () => modal.classList.add('hidden'));
+  modal?.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+  $('#btn-copiar-pix')?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(PIX_CHAVE);
+      const ok = $('#pix-copiado');
+      ok.classList.remove('opacity-0');
+      setTimeout(() => ok.classList.add('opacity-0'), 4000);
+    } catch {
+      // Clipboard API bloqueado: seleção manual num prompt de fallback
+      prompt('Copie o código PIX (Ctrl+C / selecionar):', PIX_CHAVE);
+    }
+  });
+
+  $('#btn-abrir-pix')?.addEventListener('click', () => {
+    // Copia primeiro para a área de transferência, depois tenta o deeplink dos apps
+    navigator.clipboard?.writeText(PIX_CHAVE).catch(() => {});
+    $('#pix-copiado').classList.remove('opacity-0');
+    // Padrão comum em apps bancários (não existe deeplink oficial único):
+    location.href = 'pix://pagamento?copiaecola=' + encodeURIComponent(PIX_CHAVE);
+    setTimeout(() => {
+      $('#pix-copiado').textContent = '✔ Copiado! Cole no seu app de banco (Opções/Depósito por PIX).';
+      $('#pix-copiado').classList.remove('opacity-0');
+    }, 1200);
+  });
+}
+
+function abrirModalPix() {
+  const modal = $('#pix-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  $('#pix-copiado').classList.add('opacity-0');
+  $('#pix-copiado').textContent = '✔ Código PIX copiado! Cole no seu app de banco.';
+  // QR gerado na hora a partir do payload (nada é salvo em lugar nenhum)
+  $('#pix-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?margin=8&size=192x192&data=' + encodeURIComponent(PIX_CHAVE);
 }
