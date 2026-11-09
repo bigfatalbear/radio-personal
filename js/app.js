@@ -30,21 +30,19 @@ const escapeHtml = (v) => String(v ?? '')
 // INICIALIZAÇÃO
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-  if (window.lucide) lucide.createIcons();
-  configurarTabs();
-  aplicarIdentidade();
-  preencherFormConfig();
-  vincularEventos();
-  vincularPlayer();
+  // Acesso inicial primeiro: garante que os botões do modal funcionam
+  // mesmo se algum passo posterior do boot falhar.
+  try { inicializarAcesso(); } catch (err) { console.error('Falha no acesso inicial:', err); }
+  window.lucide?.createIcons();
   setAcervoProvider(getAcervo);
-  aplicarTemaSalvo();
-  atualizarAvisos();
-  atualizarSeloDrive();
-  atualizarUIExtra();          // playlists, TTS, EQ, offline
-  renderizarProgramacoesSalvas();
-  scheduler.iniciar(getAcervo, player.setFila, player.tocar); // grade horária automática
-  renderizarStatusPassos();
-  inicializarAcesso();
+  // Cada passo em try próprio: uma falha isolada não derruba o restante do boot
+  for (const passo of [configurarTabs, aplicarIdentidade, preencherFormConfig, vincularEventos,
+    vincularPlayer, aplicarTemaSalvo, atualizarAvisos, atualizarSeloDrive, atualizarUIExtra,
+    renderizarProgramacoesSalvas, renderizarStatusPassos]) {
+    try { passo(); } catch (err) { console.error('Falha na inicialização:', err); }
+  }
+  try { setAcervoProvider(getAcervo); scheduler.iniciar(getAcervo, player.setFila, player.tocar); }
+  catch (err) { console.error('Falha ao iniciar o agendador:', err); }
 });
 
 /** Popula e vincula os controles novos: playlists, TTS, equalizador, offline. */
@@ -417,25 +415,26 @@ function atualizarSeloDrive() {
 // ============================================================
 function inicializarAcesso() {
   const modal = $('#modal-acesso-inicial');
+  const esconderModal = () => {
+    if (!modal) return;
+    modal.style.display = 'none'; // inline vence qualquer classe/CSS
+    modal.classList.add('hidden');
+  };
   const jaEscolheu = localStorage.getItem('radioPersonal:acessoEscolhido');
   const conectado = sync.conectado?.();
 
   // Já conectou com Google ou já escolheu acesso local anteriormente: não mostra
   if (conectado || jaEscolheu) {
-    modal?.classList.add('hidden');
-    modal?.style.removeProperty('display');
+    esconderModal();
     atualizarAvisos();
-    return;
   }
 
-  modal?.classList.remove('hidden');
-
+  // Listeners sempre anexados — o modal pode ser reaberto por outros fluxos
   $('#btn-acesso-google')?.addEventListener('click', async () => {
     try {
       await sync.entrarComGoogle();
       localStorage.setItem('radioPersonal:acessoEscolhido', 'google');
-      modal?.classList.add('hidden');
-      modal?.style.removeProperty('display');
+      esconderModal();
       $('#cfg-conta-status')?.textContent && ($('#cfg-conta-status').textContent = 'Conta Google conectada');
       atualizarAvisos();
       feedbackAviso('✔ Entrado com Google — playlists e Drive sincronizados.');
@@ -446,8 +445,7 @@ function inicializarAcesso() {
 
   $('#btn-acesso-local')?.addEventListener('click', () => {
     localStorage.setItem('radioPersonal:acessoEscolhido', 'local');
-    modal?.classList.add('hidden');
-    modal?.style.removeProperty('display');
+    esconderModal();
     atualizarAvisos();
     feedbackAviso('✔ Acesso local — seus dados ficam apenas neste navegador.');
   });
@@ -504,7 +502,7 @@ function vincularPlayer() {
       btnTelaCheia.title = ativo ? 'Sair da tela cheia' : 'Ativar tela cheia';
       btnTelaCheia.innerHTML = `<i data-lucide="${ativo ? 'minimize' : 'maximize'}" class="w-4 h-4"></i>`;
       statusTelaCheia.textContent = ativo ? 'Tela cheia ativada.' : 'Tela cheia desativada.';
-      if (window.lucide) lucide.createIcons();
+      window.lucide?.createIcons();
     });
   }
   const barra = $('#progresso-barra');
@@ -553,7 +551,7 @@ function renderFila() {
     btn.addEventListener('click', () => {
       playlists.alternarFavorito(player.getFila()[Number(btn.dataset.fav)].nome);
       renderFila();
-      if (window.lucide) lucide.createIcons();
+      window.lucide?.createIcons();
     });
   });
   $('#tocando-titulo').textContent = fila.length
@@ -574,7 +572,7 @@ function renderStatus(status) {
   // Troca o ícone play/pause
   const usarPause = status === 'tocando';
   iconePa.outerHTML = `<i data-lucide="${usarPause ? 'pause' : 'play'}" id="icone-play" class="w-5 h-5 fill-current"></i>`;
-  if (window.lucide) lucide.createIcons();
+  window.lucide?.createIcons();
 
   badge.classList.toggle('hidden', status !== 'tocando');
   badge.classList.toggle('flex', status === 'tocando');
@@ -612,7 +610,7 @@ async function aoGerarProgramacao(e) {
   const btn = e.target.querySelector('button[type=submit]');
   btn.disabled = true;
   btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Consultando a IA…';
-  if (window.lucide) lucide.createIcons();
+  window.lucide?.createIcons();
   resultado.innerHTML = '<div class="text-sm text-zinc-400 flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 animate-pulse"></i> Gerando programação…</div>';
 
   try {
@@ -631,7 +629,7 @@ async function aoGerarProgramacao(e) {
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i data-lucide="wand-2" class="w-4 h-4"></i> Gerar programação com IA';
-    if (window.lucide) lucide.createIcons();
+    window.lucide?.createIcons();
   }
 }
 
@@ -687,7 +685,7 @@ function renderProgramacao(prog) {
       </div>
     </article>`;
 
-  if (window.lucide) lucide.createIcons();
+  window.lucide?.createIcons();
 
   const btnAgendar = $('#btn-agendar');
   if (btnAgendar && !btnAgendar.disabled) {
@@ -757,7 +755,7 @@ function renderizarProgramacoesSalvas() {
       scheduler.removerProgramacao(btn.dataset.remAgend);
       renderizarProgramacoesSalvas();
     }));
-  if (window.lucide) lucide.createIcons();
+  window.lucide?.createIcons();
 }
 
 // ============================================================
@@ -772,7 +770,7 @@ async function baixarFilaOffline() {
     let ok = 0;
     for (let i = 0; i < fila.length; i++) {
       btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> ${i + 1}/${fila.length}`;
-      if (window.lucide) lucide.createIcons();
+      window.lucide?.createIcons();
       try {
         await offline.baixarFaixa(fila[i], fila[i].url);
         ok++;
@@ -783,7 +781,7 @@ async function baixarFilaOffline() {
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i data-lucide="download" class="w-4 h-4"></i>';
-    if (window.lucide) lucide.createIcons();
+    window.lucide?.createIcons();
   }
 }
 
@@ -813,7 +811,7 @@ function atualizarWakelockStatus(estado) {
     const n = mapa[e2] ?? mapa.inativo;
     el.innerHTML = `<i data-lucide="${n.icone}" class="w-3 h-3"></i> ${n.txt}`;
     el.className = `text-xs flex items-center gap-1.5 ${n.cls}`;
-    if (window.lucide) lucide.createIcons();
+    window.lucide?.createIcons();
   };
   mudar(estado);
   if (estado === 'aguardando') {
@@ -873,7 +871,7 @@ function atualizarListaCanais() {
       yt.removerCanal(btn.dataset.remCanal);
       atualizarListaCanais();
     }));
-  if (window.lucide) lucide.createIcons();
+  window.lucide?.createIcons();
 }
 
 async function aoBuscarVideosYT() {
@@ -887,7 +885,7 @@ async function aoBuscarVideosYT() {
     selecaoYT = new Set(videosYT.slice(0, 3).map((v) => v.videoId)); // pré-seleciona os 3 mais recentes
     renderVideosYT();
     $('#yt-acoes').hidden = false;
-    if (window.lucide) lucide.createIcons();
+    window.lucide?.createIcons();
   } catch (err) {
     alvo.innerHTML = `
       <div class="bg-red-500/10 border border-red-500/40 text-red-300 rounded-xl p-3 text-sm flex items-start gap-2">
@@ -896,7 +894,7 @@ async function aoBuscarVideosYT() {
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i data-lucide="search" class="w-4 h-4"></i> Buscar vídeos recentes';
-    if (window.lucide) lucide.createIcons();
+    window.lucide?.createIcons();
   }
 }
 
@@ -1078,7 +1076,7 @@ function vincularGerenciarPlaylists() {
   const abrir = () => {
     modal.style.display = 'grid';
     renderGerenciarPlaylists();
-    if (window.lucide) lucide.createIcons();
+    window.lucide?.createIcons();
   };
   // Delegação global (idêntica ao padrão da PIX modal)
   document.addEventListener('click', (e) => {
@@ -1131,7 +1129,7 @@ function vincularGerenciarPlaylists() {
           feedbackAviso(`✔ ${lista.length} faixa(s) adicionadas à playlist.`);
         }
       }
-      if (window.lucide) lucide.createIcons();
+      window.lucide?.createIcons();
     } catch (err) { alert(err.message); }
   });
 
@@ -1207,7 +1205,7 @@ async function aoEntrarGoogle() {
     await sync.entrarComGoogle();
     st.textContent = '✔ Conectado! Playlists salvas no Drive e uploads liberados.';
     btn.innerHTML = '<i data-lucide="user-check" class="w-4 h-4"></i> Conta Google conectada';
-    if (window.lucide) lucide.createIcons();
+    window.lucide?.createIcons();
   } catch (err) {
     st.textContent = '✖ ' + err.message;
   }
@@ -1224,7 +1222,7 @@ async function aoEnviarLocaisDrive() {
     let ok = 0;
     for (let i = 0; i < locais.length; i++) {
       btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> ${i + 1}/${locais.length}`;
-      if (window.lucide) lucide.createIcons();
+      window.lucide?.createIcons();
       const f = locais[i];
       try {
         const blob = await fetch(f.url).then((r) => r.blob());
@@ -1240,7 +1238,7 @@ async function aoEnviarLocaisDrive() {
     }
     btn.disabled = false;
     btn.innerHTML = '<i data-lucide="cloud-upload" class="w-4 h-4"></i> Enviar locais para o Drive';
-    if (window.lucide) lucide.createIcons();
+    window.lucide?.createIcons();
     feedbackAviso(`✔ ${ok} de ${locais.length} faixa(s) enviadas à pasta do Drive (agora permanentes).`);
     player.setFila(fila); // sincroniza filaBase (as faixas viraram de Drive)
     renderFila();

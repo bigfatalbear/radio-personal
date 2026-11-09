@@ -689,7 +689,7 @@
             const aviso = document.getElementById('aviso-update');
             aviso?.classList.remove('hidden');
             aviso?.classList.add('flex');
-            if (window.lucide) lucide.createIcons();
+            window.lucide?.createIcons();
           };
           verificarNovaVersao();
           reg.addEventListener?.('updatefound', verificarNovaVersao);
