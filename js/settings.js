@@ -8,14 +8,13 @@ const STORAGE_KEY = 'radioPersonal:config';
 // Estrutura padrão (mesclada com o que já estiver salvo)
 export const CONFIG_PADRAO = {
   provedor: 'gemini',        // 'gemini' | 'openai' | 'groq'
-  apiKey: '',
-  driveFonte: '',            // link ou ID da pasta do Drive
+  apiKey: 'AIzaSyA3JvUFthh4AWBfIHeiOhCPvKvaBRTL1Uk',
+  driveFonte: 'https://drive.google.com/drive/folders/1IWWm2UM0U9yc6Dnf65KOfqCt4ySKSYc_?usp=drive_link', // link público da pasta de músicas
   rádio: {
     nome: 'Rádio Personal',
     slogan: 'Sua rádio, seu estilo',
     logo: '',
   },
-  wakelock: { ativo: true, avisos: { bateria: false, chrome: false } }, // modo rádio (tela acordada)
   tts: { ativo: false, voz: '', velocidade: 1, estilo: 'padrao' }, // locução automática
   eq: { bass: 0, mid: 0, treble: 0, visualizador: true },          // equalizador
   programacoes: [],           // grade horária automática (scheduler.js)
