@@ -653,6 +653,29 @@
 
   <audio id="audio" preload="metadata"></audio>
 
+  <!-- Modal inicial de acesso: Entrar com Google ou Continuar local -->
+  <div id="modal-acesso-inicial" class="fixed inset-0 z-[90] items-center justify-center bg-black/80 backdrop-blur-sm p-4" style="display:flex">
+    <div class="glass rounded-2xl border border-white/20 max-w-md w-full p-8 text-center space-y-6 shadow-2xl">
+      <div class="mx-auto">
+        <i data-lucide="radio" class="w-16 h-16 text-cyan-400 mx-auto mb-4"></i>
+        <h2 class="text-2xl font-bold text-white mb-2">Bem-vindo à Rádio Personal</h2>
+        <p class="text-zinc-300 mb-6">Escolha como deseja usar a rádio:</p>
+        <div class="flex flex-col gap-3">
+          <button id="btn-acesso-google" class="w-full btn-secundario btn-ciano flex items-center justify-center gap-2">
+            <i data-lucide="log-in" class="w-5 h-5"></i> Entrar com Google
+          </button>
+          <button id="btn-acesso-local" class="w-full btn-primario flex items-center justify-center gap-2">
+            <i data-lucide="user" class="w-5 h-5"></i> Continuar com acesso local
+          </button>
+        </div>
+        <p class="text-xs text-zinc-500 mt-4 leading-relaxed">
+          Sem login Google: músicas e playlists ficam salvas apenas neste navegador.<br>
+          Com login Google: sincroniza playlists e envia músicas ao seu Google Drive.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <!-- Ponto de entrada (module ES6) -->
   <script type="module" src="js/app.js"></script>
   <script>

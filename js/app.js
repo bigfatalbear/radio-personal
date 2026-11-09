@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderizarProgramacoesSalvas();
   scheduler.iniciar(getAcervo, player.setFila, player.tocar); // grade horária automática
   renderizarStatusPassos();
+  inicializarAcesso();
 });
 
 /** Popula e vincula os controles novos: playlists, TTS, equalizador, offline. */
@@ -409,6 +410,47 @@ function atualizarSeloDrive() {
   const selo = $('#selo-drive');
   selo.classList.remove('hidden');
   $('#selo-drive-txt').textContent = id ? `Drive: ${id.slice(0, 8)}…` : 'Drive não configurado';
+}
+
+// ============================================================
+// ACESSO INICIAL — Google ou Local
+// ============================================================
+function inicializarAcesso() {
+  const modal = $('#modal-acesso-inicial');
+  const jaEscolheu = localStorage.getItem('radioPersonal:acessoEscolhido');
+  const conectado = sync.conectado?.();
+
+  // Já conectou com Google ou já escolheu acesso local anteriormente: não mostra
+  if (conectado || jaEscolheu) {
+    modal?.classList.add('hidden');
+    modal?.style.removeProperty('display');
+    atualizarAvisos();
+    return;
+  }
+
+  modal?.classList.remove('hidden');
+
+  $('#btn-acesso-google')?.addEventListener('click', async () => {
+    try {
+      await sync.entrarComGoogle();
+      localStorage.setItem('radioPersonal:acessoEscolhido', 'google');
+      modal?.classList.add('hidden');
+      modal?.style.removeProperty('display');
+      $('#cfg-conta-status')?.textContent && ($('#cfg-conta-status').textContent = 'Conta Google conectada');
+      atualizarAvisos();
+      feedbackAviso('✔ Entrado com Google — playlists e Drive sincronizados.');
+    } catch (err) {
+      alert('Não foi possível entrar com o Google: ' + err.message);
+    }
+  });
+
+  $('#btn-acesso-local')?.addEventListener('click', () => {
+    localStorage.setItem('radioPersonal:acessoEscolhido', 'local');
+    modal?.classList.add('hidden');
+    modal?.style.removeProperty('display');
+    atualizarAvisos();
+    feedbackAviso('✔ Acesso local — seus dados ficam apenas neste navegador.');
+  });
 }
 
 // ============================================================
