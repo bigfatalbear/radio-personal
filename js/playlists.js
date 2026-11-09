@@ -35,8 +35,8 @@ export function salvarPlaylist(nome, faixas) {
   if (!faixas?.length) throw new Error('A fila está vazia — nada a salvar.');
   const listas = getPlaylists();
   const existente = listas.find((p) => p.nome === nome.trim());
-  if (existente) existente.faixas = faixas.map(({ id, nome: n, origem, url }) => (origem === 'local' ? { nome: n, origem, url } : { id, nome: n, origem: 'drive' }));
-  else listas.push({ id: `pl-${Date.now()}`, nome: nome.trim(), criada: Date.now(), faixas: faixas.map(({ id, nome: n, origem, url }) => (origem === 'local' ? { nome: n, origem, url } : { id, nome: n, origem: 'drive' })) });
+  if (existente) existente.faixas = faixas.map(limparFaixa);
+  else listas.push({ id: `pl-${Date.now()}`, nome: nome.trim(), criada: Date.now(), faixas: faixas.map(limparFaixa) });
   gravar(KEY_PLAYLISTS, listas);
   return listas.length;
 }

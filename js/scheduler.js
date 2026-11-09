@@ -18,7 +18,7 @@ export function agendarProgramacao({ nomeBloco, grade, locucao, ordem, inicio })
     grade,
     locucao,
     inicio: String(inicio ?? '').trim(), // "HH:MM"
-    faixas: ordem.map((f) => ({ id: f.id, nome: f.nome, origem: 'drive' })),
+    faixas: ordem.map((f) => ({ id: f.id, nome: f.nome, origem: f.origem ?? 'drive', videoId: f.videoId, canal: f.canal, thumb: f.thumb })),
   };
   lista.push(nova);
   salvarConfig({ programacoes: lista });
@@ -43,7 +43,7 @@ function partidaPendente(prog, agora) {
   const marca = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   const agoraStr = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`;
   // Dispara quando agora === marca e ainda não rodou neste minuto
-  return marca === agoraStr && localStorage.getItem('radioPersonal:ult-disparo') !== agoraStr
+  return marca === agoraStr && localStorage.getItem(`radioPersonal:ult-disparo:${prog.id}`) !== agoraStr
     ? { prog, agora: agoraStr } : null;
 }
 
@@ -58,17 +58,19 @@ export function iniciar(getAcervoFn, setFilaFn, tocarFn) {
     for (const prog of getProgramacoes()) {
       const gatilho = partidaPendente(prog, agora);
       if (!gatilho) continue;
-      localStorage.setItem('radioPersonal:ult-disparo', gatilho.agora);
-      const acervo = getAcervoFn() ?? [];
-      const mapa = new Map(acervo.map((f) => [f.id, f]));
-      const filaResolvida = prog.faixas
-        .map((f) => mapa.get(f.id) ?? acervo.find((x) => x.nome === f.nome))
-        .filter(Boolean);
-      if (!filaResolvida.length) continue;
-      setFilaFn(filaResolvida);
-      await tocarFn(0);
-      await falarLocucao(prog.locucao);
-      window.dispatchEvent(new CustomEvent('radioPersonal:disparou', { detail: prog }));
+      try {
+        localStorage.setItem(`radioPersonal:ult-disparo:${prog.id}`, gatilho.agora);
+        const acervo = getAcervoFn() ?? [];
+        const mapa = new Map(acervo.map((f) => [f.id, f]));
+        const filaResolvida = prog.faixas
+          .map((f) => mapa.get(f.id) ?? acervo.find((x) => x.nome === f.nome) ?? (f.origem === 'youtube' ? f : null))
+          .filter(Boolean);
+        if (!filaResolvida.length) continue;
+        setFilaFn(filaResolvida);
+        await tocarFn(0);
+        await falarLocucao(prog.locucao);
+        window.dispatchEvent(new CustomEvent('radioPersonal:disparou', { detail: prog }));
+      } catch { /* evita rejeição não tratada no interval */ }
     }
   }, 20_000); // verifica a cada 20s (precisão suficiente p/ minuto)
 }

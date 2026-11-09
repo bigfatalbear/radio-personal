@@ -19,6 +19,13 @@ import * as sync from './sync.js';
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
+const escapeHtml = (v) => String(v ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
 // ============================================================
 // INICIALIZAÇÃO
 // ============================================================
@@ -291,7 +298,7 @@ function renderSwatches(paleta) {
   if (!paleta) return;
   const cores = [paleta.acento, paleta.hover, paleta.escuro].filter(Boolean);
   $('#paleta-swatches').innerHTML = cores.map((c) => `
-    <span class="inline-block w-6 h-6 rounded-md border border-zinc-700" style="background:${c}" title="${c}"></span>`).join('');
+    <span class="inline-block w-6 h-6 rounded-md border border-zinc-700" style="background:${escapeHtml(c)}" title="${escapeHtml(c)}"></span>`).join('');
 }
 
 // ============================================================
@@ -388,7 +395,8 @@ function mostrarFeedback(msg, cor = 'cor-acento-texto') {
 function feedbackAviso(msg) {
   const el = $('#aviso-player');
   if (!el) return;
-  el.querySelector('span').textContent = '✔ ' + msg;
+  const span = el.querySelector('span');
+  if (span) span.textContent = '✔ ' + msg;
   setTimeout(atualizarAvisos, 6000);
 }
 
@@ -410,6 +418,10 @@ async function aoCarregarDrive() {
   const btn = $('#btn-carregar-drive');
   btn.disabled = true;
   try {
+    const cfg = getConfig();
+    const folderId = extrairDriveId(cfg.driveFonte);
+    if (!folderId) throw new Error('Informe o link/ID da pasta do Google Drive em Configurações antes de carregar.');
+    if (!cfg.apiKey && !cfg.driveApiKey) throw new Error('Informe uma API Key do Google (Gemini/OpenAI) em Configurações antes de carregar o Drive.');
     const faixas = await listarFaixasDrive();
     player.setFila(faixas);
     renderizarStatusPassos();
@@ -479,8 +491,8 @@ function renderFila() {
         ${i === player.getIndice() ? '▶' : i + 1}
       </span>
       <div class="min-w-0 flex-1">
-        <p class="text-sm font-medium truncate">${f.nome}</p>
-        <p class="text-xs text-zinc-500">${f.origem === 'drive' ? 'Google Drive' : f.origem === 'youtube' ? `YouTube · ${f.canal ?? ''}` : 'Arquivo local'}</p>
+        <p class="text-sm font-medium truncate">${escapeHtml(f.nome)}</p>
+        <p class="text-xs text-zinc-500">${f.origem === 'drive' ? 'Google Drive' : f.origem === 'youtube' ? `YouTube · ${escapeHtml(f.canal ?? '')}` : 'Arquivo local'}</p>
       </div>
       <button data-fav="${i}" class="shrink-0 ${fav ? 'text-pink-400' : 'text-zinc-600 hover:text-pink-300'} transition"
               title="${fav ? 'Remover dos favoritos' : 'Favoritar'}">
@@ -515,7 +527,7 @@ function renderStatus(status) {
   wakelock.aplicarPeloEstado(status).then(() => {
     if (status === 'tocando') atualizarWakelockStatus(wakelock.estaAtivo() ? 'ativo' : 'aguardando');
     else atualizarWakelockStatus('inativo');
-  });
+  }).catch(() => {});
 
   // Troca o ícone play/pause
   const usarPause = status === 'tocando';
@@ -532,6 +544,7 @@ function renderStatus(status) {
     status === 'tocando' ? 'Tocando agora' :
     status === 'pausado' ? 'Pausado' :
     status === 'erro' ? 'Erro ao tocar — pulando…' : 'Pronto';
+  renderFila();
 }
 
 function renderProgresso({ atual, duracao, frac }) {
@@ -571,7 +584,7 @@ async function aoGerarProgramacao(e) {
     resultado.innerHTML = `
       <div class="bg-red-500/10 border border-red-500/40 text-red-300 rounded-xl p-4 text-sm flex items-start gap-2">
         <i data-lucide="alert-triangle" class="w-4 h-4 mt-0.5 shrink-0"></i>
-        <span>${err.message}</span>
+        <span>${escapeHtml(err.message)}</span>
       </div>`;
   } finally {
     btn.disabled = false;
@@ -598,25 +611,25 @@ function renderProgramacao(prog) {
         <p class="text-xs cor-acento-texto font-semibold uppercase tracking-wider flex items-center gap-1.5">
           <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Programação gerada pela IA
         </p>
-        <h3 class="text-lg font-bold mt-1">${prog.nomeBloco ?? 'Bloco sem nome'}</h3>
+        <h3 class="text-lg font-bold mt-1">${escapeHtml(prog.nomeBloco ?? 'Bloco sem nome')}</h3>
       </header>
 
       <div>
         <h4 class="text-xs font-semibold text-zinc-400 uppercase mb-1">Grade horária sugerida</h4>
         <ul class="text-sm space-y-0.5 text-zinc-300">
-          ${(prog.grade ?? []).map((g) => `<li class="flex gap-2"><i data-lucide="clock" class="w-3.5 h-3.5 mt-0.5 text-zinc-500 shrink-0"></i>${g}</li>`).join('')}
+          ${(prog.grade ?? []).map((g) => `<li class="flex gap-2"><i data-lucide="clock" class="w-3.5 h-3.5 mt-0.5 text-zinc-500 shrink-0"></i>${escapeHtml(g)}</li>`).join('')}
         </ul>
       </div>
 
       <div>
         <h4 class="text-xs font-semibold text-zinc-400 uppercase mb-1">Locução de abertura</h4>
-        <blockquote class="text-sm text-zinc-300 border-l-2 cor-acento-borda-txt pl-3 italic">${prog.locucao ?? '—'}</blockquote>
+        <blockquote class="text-sm text-zinc-300 border-l-2 cor-acento-borda-txt pl-3 italic">${escapeHtml(prog.locucao ?? '—')}</blockquote>
       </div>
 
       <div>
         <h4 class="text-xs font-semibold text-zinc-400 uppercase mb-1">Ordem de reprodução (${ordem.length} faixas)</h4>
         <ol class="text-sm text-zinc-300 list-decimal list-inside space-y-0.5">
-          ${ordem.map((f) => `<li>${f.nome}</li>`).join('') || '<li class="text-zinc-500 italic">— veja fila vazia</li>'}
+          ${ordem.map((f) => `<li>${escapeHtml(f.nome)}</li>`).join('') || '<li class="text-zinc-500 italic">— veja fila vazia</li>'}
         </ol>
       </div>
 
@@ -675,8 +688,8 @@ function atualizarSelectPlaylists(selecionar = '') {
   const sel = $('#sel-playlist');
   if (!sel) return;
   const listas = playlists.getPlaylists();
-  sel.innerHTML = '<option value="">— Playlists salvas —</option>' +
-    listas.map((p) => `<option value="${p.id}">${p.nome} (${p.faixas.length})</option>`).join('');
+   sel.innerHTML = '<option value="">— Playlists salvas —</option>' +
+     listas.map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.nome)} (${p.faixas.length})</option>`).join('');
   if (selecionar) sel.value = listas.find((p) => p.nome === selecionar)?.id ?? '';
 }
 
@@ -692,8 +705,8 @@ function renderizarProgramacoesSalvas() {
       </h4>
       ${lista.map((p) => `
         <div class="flex items-center gap-2 text-sm">
-          <span class="font-mono cor-acento-texto font-bold">${p.inicio}</span>
-          <span class="flex-1 truncate">${p.nomeBloco ?? 'Programação'} · ${p.faixas?.length ?? 0} faixas</span>
+          <span class="font-mono cor-acento-texto font-bold">${escapeHtml(p.inicio)}</span>
+          <span class="flex-1 truncate">${escapeHtml(p.nomeBloco ?? 'Programação')} · ${p.faixas?.length ?? 0} faixas</span>
           <button data-rem-agend="${p.id}" class="text-zinc-500 hover:text-red-400 transition" title="Remover agendamento"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
         </div>`).join('')}
     </div>`;
@@ -808,7 +821,7 @@ function atualizarListaCanais() {
   ul.innerHTML = canais.map((c) => `
     <li class="flex items-center gap-1.5 text-xs bg-white/5 border border-white/10 rounded-full pl-3 pr-1 py-1">
       <i data-lucide="youtube" class="w-3 h-3 text-red-400"></i>
-      <span class="font-medium">${c.titulo}</span>
+      <span class="font-medium">${escapeHtml(c.titulo)}</span>
       <button data-rem-canal="${c.id}" class="text-zinc-500 hover:text-red-400 transition p-0.5" title="Remover canal">
         <i data-lucide="x" class="w-3 h-3"></i>
       </button>
@@ -836,7 +849,7 @@ async function aoBuscarVideosYT() {
   } catch (err) {
     alvo.innerHTML = `
       <div class="bg-red-500/10 border border-red-500/40 text-red-300 rounded-xl p-3 text-sm flex items-start gap-2">
-        <i data-lucide="alert-triangle" class="w-4 h-4 mt-0.5 shrink-0"></i><span>${err.message}</span>
+        <i data-lucide="alert-triangle" class="w-4 h-4 mt-0.5 shrink-0"></i><span>${escapeHtml(err.message)}</span>
       </div>`;
   } finally {
     btn.disabled = false;
@@ -854,8 +867,8 @@ function renderVideosYT() {
     <label class="flex items-center gap-2.5 p-2 rounded-lg bg-white/[0.03] border border-white/10 text-sm cursor-pointer hover:bg-white/[0.06] transition">
       <input type="checkbox" data-yt-sel="${v.videoId}" ${sel ? 'checked' : ''} class="w-4 h-4 accent-cyan-500 shrink-0">
       <div class="min-w-0 flex-1">
-        <p class="font-medium truncate">${v.nome || '(sem título)'}</p>
-        <p class="text-xs text-zinc-500 truncate">${v.canal} · ${d}</p>
+        <p class="font-medium truncate">${escapeHtml(v.nome || '(sem título)')}</p>
+        <p class="text-xs text-zinc-500 truncate">${escapeHtml(v.canal)} · ${d}</p>
       </div>
       <span class="yt-badge shrink-0">YT</span>
     </label>`;
@@ -928,16 +941,19 @@ function mostrarMiniYT() {
   const mini = $('#yt-mini');
   mini?.classList.remove('hidden');
   const f = player.getAtual();
-  $('#yt-mini-titulo').textContent = f?.nome ?? 'YouTube';
+  const titulo = $('#yt-mini-titulo');
+  if (titulo) titulo.textContent = f?.nome ?? 'YouTube';
 }
 
 function alternarYTMini(visivel) {
   player.alternarVideoYT(visivel);
-  $('#btn-yt-esconder').classList.toggle('hidden', !visivel);
-  $('#btn-yt-mostrar').classList.toggle('hidden', visivel);
+  $('#btn-yt-esconder')?.classList.toggle('hidden', !visivel);
+  $('#btn-yt-mostrar')?.classList.toggle('hidden', visivel);
   const moldura = $('#yt-moldura');
-  moldura.style.height = visivel ? '' : '2px';
-  moldura.style.overflow = 'hidden';
+  if (moldura) {
+    moldura.style.height = visivel ? '' : '2px';
+    moldura.style.overflow = 'hidden';
+  }
   if (visivel) sanitizeMoldura(); else esconderIframe();
 }
 

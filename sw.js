@@ -2,11 +2,13 @@
  * sw.js — Service Worker do Rádio Personal (cache básico / offline da UI).
  * O streaming de áudio (Drive ou local) NUNCA é cacheado.
  */
-const CACHE = 'radio-personal-v14';
+const CACHE = 'radio-personal-v15';
 const SHELL = [
   './',
   './index.html',
   './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
   './css/styles.css',
   './js/app.js',
   './js/settings.js',

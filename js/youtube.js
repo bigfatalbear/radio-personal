@@ -129,9 +129,10 @@ let sdkPromise = null;
 function carregarSDK() {
   if (window.YT?.Player) return Promise.resolve(window.YT);
   if (!sdkPromise) {
-    sdkPromise = new Promise((res) => {
+    sdkPromise = new Promise((res, rej) => {
       const s = document.createElement('script');
       s.src = 'https://www.youtube.com/iframe_api';
+      s.onerror = () => rej(new Error('Falha ao carregar YouTube IFrame API.'));
       document.head.appendChild(s);
       window.onYouTubeIframeAPIReady = () => res(window.YT);
     });

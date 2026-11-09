@@ -46,7 +46,7 @@ export function mensagemErroDrive(status, corpo, apiKey = '') {
   if (/invalid.*(value|query)|invalidQuery|badRequest/i.test(motivo + ' ' + detalhe) && status === 400) {
     return `Pedido inválido ao Drive (400): ID da pasta provavelmente incorreto. Cole o link da pasta em Configurações.${sufixo}`;
   }
-  if (status === 400) return `Pedido recusado pelo Drive (400). Verifique a API Key e o link da pasta.${sufixo}`;
+  if (status === 400) return `Pedido recusado pelo Drive (400). Verifique a API Key, o link da pasta e se a pasta está pública ("qualquer pessoa com o link").${sufixo}`;
   if (status === 401) return 'Credencial rejeitada pelo Drive (401). Verifique a API Key.';
   if (status === 403) {
     if (/accessNotConfigured|SERVICE_DISABLED|has not been used|disabled/i.test(motivo + ' ' + detalhe)) {

@@ -80,12 +80,9 @@
             <div id="selo-drive" class="drive-status">
               <i data-lucide="hard-drive"></i><span id="selo-drive-txt">Drive não configurado</span>
             </div>
-            <div id="badge-ao-vivo" class="live-status hidden">
-              <span class="live-dot cor-acento-fun"></span> AO VIVO
-            </div>
           </div>
           <button id="btn-ajude-desenvolvedor" class="support-button" title="Ajude o desenvolvedor via PIX ♥">
-            <i data-lucide="heart-handshake"></i><span>Ajude o dev</span>
+            <i data-lucide="heart"></i><span>Ajude o dev</span>
           </button>
         </div>
         <div class="hero-copy">
@@ -661,43 +658,45 @@
   <script>
     // Registro do Service Worker em file:// não roda — só em https/Pages
     if ('serviceWorker' in navigator && location.protocol === 'https:') {
-      try {
-        const reg = await navigator.serviceWorker.register('sw.js');
-        // ===== Aviso automático de nova versão =====
-        const mostrarAviso = () => {
-          const aviso = document.getElementById('aviso-update');
-          aviso?.classList.remove('hidden');
-          aviso?.classList.add('flex');
-          if (window.lucide) lucide.createIcons();
-        };
-        verificarNovaVersao();
-        reg.addEventListener?.('updatefound', verificarNovaVersao);
-        setInterval(verificarNovaVersao, 60_000); // checa a cada minuto
+      (async () => {
+        try {
+          const reg = await navigator.serviceWorker.register('sw.js');
+          // ===== Aviso automático de nova versão =====
+          const mostrarAviso = () => {
+            const aviso = document.getElementById('aviso-update');
+            aviso?.classList.remove('hidden');
+            aviso?.classList.add('flex');
+            if (window.lucide) lucide.createIcons();
+          };
+          verificarNovaVersao();
+          reg.addEventListener?.('updatefound', verificarNovaVersao);
+          setInterval(verificarNovaVersao, 60_000); // checa a cada minuto
 
-        let swNovo = null;
-        function verificarNovaVersao() {
-          // enquanto a página atual está sob controle de um SW antigo
-          if (!navigator.serviceWorker.controller) return;
-          const emInstalacao = reg.installing || reg.waiting;
-          if (emInstalacao?.state === 'installed') { swNovo = emInstalacao; mostrarAviso(); return; }
-          if (reg.waiting?.state === 'installed') { swNovo = reg.waiting; mostrarAviso(); return; }
-          if (emInstalacao) {
-            emInstalacao.addEventListener('statechange', () => {
-              if (emInstalacao.state === 'installed') { swNovo = emInstalacao; mostrarAviso(); }
-            });
+          let swNovo = null;
+          function verificarNovaVersao() {
+            // enquanto a página atual está sob controle de um SW antigo
+            if (!navigator.serviceWorker.controller) return;
+            const emInstalacao = reg.installing || reg.waiting;
+            if (emInstalacao?.state === 'installed') { swNovo = emInstalacao; mostrarAviso(); return; }
+            if (reg.waiting?.state === 'installed') { swNovo = reg.waiting; mostrarAviso(); return; }
+            if (emInstalacao) {
+              emInstalacao.addEventListener('statechange', () => {
+                if (emInstalacao.state === 'installed') { swNovo = emInstalacao; mostrarAviso(); }
+              });
+            }
           }
-        }
-        document.getElementById('btn-atualizar')?.addEventListener('click', () => {
-          swNovo?.postMessage('PULAR_ESPERA');
-          navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
-          // Se a nova versão já assumiu o controle antes do listener pegar, força:
-          setTimeout(() => location.reload(), 2500);
-        });
-        document.getElementById('btn-fechar-update')?.addEventListener('click', () => {
-          const aviso = document.getElementById('aviso-update');
-          aviso?.classList.remove('flex'); aviso?.classList.add('hidden');
-        });
-      } catch { /* registro falhou (sem https etc.) — sem aviso */ }
+          document.getElementById('btn-atualizar')?.addEventListener('click', () => {
+            swNovo?.postMessage('PULAR_ESPERA');
+            navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
+            // Se a nova versão já assumiu o controle antes do listener pegar, força:
+            setTimeout(() => location.reload(), 2500);
+          });
+          document.getElementById('btn-fechar-update')?.addEventListener('click', () => {
+            const aviso = document.getElementById('aviso-update');
+            aviso?.classList.remove('flex'); aviso?.classList.add('hidden');
+          });
+        } catch { /* registro falhou (sem https etc.) — sem aviso */ }
+      })();
     }
   </script>
 </body>

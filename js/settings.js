@@ -15,7 +15,7 @@ export const CONFIG_PADRAO = {
     slogan: 'Sua rádio, seu estilo',
     logo: '',
   },
- somaVol: null,              // guarda volume anterior (uso interno)
+  wakelock: { ativo: true, avisos: { bateria: false, chrome: false } }, // modo rádio (tela acordada)
   tts: { ativo: false, voz: '', velocidade: 1, estilo: 'padrao' }, // locução automática
   eq: { bass: 0, mid: 0, treble: 0, visualizador: true },          // equalizador
   programacoes: [],           // grade horária automática (scheduler.js)

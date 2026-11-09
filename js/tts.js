@@ -86,6 +86,7 @@ export async function anunciarFaixa(faixa, nomeRadio) {
 
 /** Fala um texto livre (ex.: locução de abertura da programação IA). */
 export async function falarLocucao(texto) {
+  if (!ttsAtivo()) return;
   const cfg = getConfig();
   await falar(texto ?? '', Number(cfg.tts?.velocidade) || 0.95);
 }

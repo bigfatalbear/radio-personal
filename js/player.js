@@ -129,6 +129,9 @@ export async function tocar(indice = null) {
     document.body.appendChild(Object.assign(document.createElement('span'), { id: 'audio-eq-conectado', hidden: '' }));
   }
 
+  if (audio.src && audio.src.startsWith('blob:')) {
+    try { URL.revokeObjectURL(audio.src); } catch { /* ignore */ }
+  }
   audio.src = url;
   audio.load();
   atualizarMediaSession(faixa);

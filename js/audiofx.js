@@ -83,8 +83,9 @@ export function iniciarVisualizador() {
   const c2d = cv?.getContext('2d');
   const desenhar = () => {
     rafId = requestAnimationFrame(desenhar);
-    const w = cv ? (cv.width = cv.clientWidth) : 0;
-    const h = cv ? (cv.height = cv.clientHeight) : 0;
+    const w = cv ? cv.clientWidth : 0;
+    const h = cv ? cv.clientHeight : 0;
+    if (cv && (cv.width !== w || cv.height !== h)) { cv.width = w; cv.height = h; }
     c2d?.clearRect(0, 0, w, h);
     let dados = null;
     let energiaTotal = 0;
